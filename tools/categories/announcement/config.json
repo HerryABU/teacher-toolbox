@@ -1,0 +1,18 @@
+{
+  "tools": [
+    {
+      "id": "authorization",
+      "name": "特别鸣谢",
+      "description": "特别鸣谢",
+      "icon": "Bell",
+      "path": "./tools/categories/announcement/tools/authorization/index.html"
+    },
+    {
+      "id": "out1",
+      "name": "TS1",
+      "description": "ts1",
+      "icon": "Bell",
+      "path": "./tools/categories/announcement/tools/out1/index.html"
+    }
+  ]
+}

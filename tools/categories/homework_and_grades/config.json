@@ -1,0 +1,32 @@
+{
+  "tools": [
+    {
+      "id": "homework_statistics",
+      "name": "作业统计",
+      "description": "统计作业完成情况，生成各类分析报表",
+      "icon": "DataAnalysis",
+      "path": "./tools/homework_statistics/index.html"
+    },
+    {
+      "id": "grade_analysis",
+      "name": "成绩分析",
+      "description": "分析学生成绩分布，生成成绩趋势图表",
+      "icon": "TrendCharts",
+      "path": "./tools/grade_analysis/index.html"
+    },
+    {
+      "id": "error_collection",
+      "name": "错题收集",
+      "description": "收集和管理学生常见错题，支持分类整理",
+      "icon": "Collection",
+      "path": "./tools/error_collection/index.html"
+    },
+    {
+      "id": "knowledge_point_random_test",
+      "name": "知识点随抽测",
+      "description": "随机抽取知识点进行快速检测，帮助学生巩固学习内容，支持按科目和章节筛选题目",
+      "icon": "Ask",
+      "path": "./tools/knowledge_point_random_test/index.html"
+    }
+  ]
+}

@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>删除项目 - 教师工具箱</title>
+    
+    <!-- 引入Vue.js和相关库 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/pinia@2/dist/pinia.iife.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    
+    <!-- 引入工具函数 -->
+    <script src="src/js/utils.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            color: #303133;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            background: linear-gradient(135deg, #f56c6c 0%, #f78989 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #409eff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .warning-message {
+            background-color: #fef0f0;
+            border: 1px solid #f56c6c;
+            color: #f56c6c;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #303133;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: white;
+            transition: border-color 0.2s ease;
+        }
+        
+        .form-select:focus {
+            outline: none;
+            border-color: #409eff;
+        }
+        
+        .success-message {
+            background-color: #f0f9ff;
+            border: 1px solid #409eff;
+            color: #409eff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+        }
+        
+        .error-message {
+            background-color: #fef0f0;
+            border: 1px solid #f56c6c;
+            color: #f56c6c;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .categories-section {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e4e7ed;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #303133;
+        }
+        
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #dcdfe6;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .category-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .category-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+        
+        .category-name {
+            font-weight: 500;
+            color: #303133;
+        }
+        
+        .category-id {
+            font-size: 12px;
+            color: #909399;
+            margin-left: 10px;
+        }
+        
+        .delete-btn {
+            background-color: #f56c6c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .delete-btn:hover {
+            background-color: #f78989;
+        }
+        
+        .tools-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e4e7ed;
+        }
+        
+        .tools-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .tools-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #303133;
+        }
+        
+        .tool-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #dcdfe6;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background-color: #f5f7fa;
+        }
+        
+        .tool-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .tool-icon {
+            font-size: 20px;
+            margin-right: 12px;
+        }
+        
+        .tool-name {
+            font-weight: 500;
+            color: #303133;
+        }
+        
+        .tool-desc {
+            font-size: 12px;
+            color: #909399;
+            margin-left: 10px;
+        }
+        
+        .remove-tool-btn {
+            background-color: #f56c6c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .remove-tool-btn:hover {
+            background-color: #f78989;
+        }
+        
+        .confirm-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .confirm-dialog.show {
+            display: flex;
+        }
+        
+        .dialog-content {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            width: 400px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dialog-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #303133;
+            margin-bottom: 15px;
+        }
+        
+        .dialog-message {
+            color: #606266;
+            margin-bottom: 20px;
+        }
+        
+        .dialog-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary {
+            background-color: #409eff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #66b1ff;
+        }
+        
+        .btn-danger {
+            background-color: #f56c6c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #f78989;
+        }
+        
+        .btn-secondary {
+            background-color: #909399;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #a6a9ad;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #909399;
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .category-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .category-info {
+                margin-bottom: 10px;
+            }
+            
+            .dialog-content {
+                width: 90%;
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <a href="index.html" class="back-link">← 返回主页</a>
+            
+            <div class="header">
+                <h1>删除项目</h1>
+                <p>管理工具分类和工具</p>
+            </div>
+            
+            <div class="warning-message">
+                ⚠️ 删除操作不可恢复，请谨慎操作！
+            </div>
+            
+            <div class="success-message" :class="{ show: successMessage }">
+                {{ successMessage }}
+            </div>
+            
+            <div class="error-message" :class="{ show: errorMessage }">
+                {{ errorMessage }}
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">选择分类</label>
+                <select class="form-select" v-model="selectedCategoryId" @change="loadToolsForCategory">
+                    <option value="">所有分类</option>
+                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                        {{ category.name }}
+                    </option>
+                </select>
+            </div>
+            
+            <div class="categories-section">
+                <div class="section-header">
+                    <div class="section-title">分类管理</div>
+                </div>
+                
+                <div v-if="filteredCategories.length === 0" class="empty-state">
+                    <div class="empty-state-icon">🔍</div>
+                    <h3>暂无分类</h3>
+                    <p>暂无可用的分类。</p>
+                </div>
+                
+                <div v-else>
+                    <div v-for="category in filteredCategories" :key="category.id" class="category-item">
+                        <div class="category-info">
+                            <div class="category-icon">{{ getIcon(category.icon) }}</div>
+                            <div class="category-name">{{ category.name }}</div>
+                            <div class="category-id">{{ category.id }}</div>
+                        </div>
+                        <button class="delete-btn" @click="showDeleteCategoryDialog(category)">删除</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tools-section">
+                <div class="tools-header">
+                    <div class="tools-title">工具管理</div>
+                </div>
+                
+                <div v-if="filteredTools.length === 0" class="empty-state">
+                    <div class="empty-state-icon">🔍</div>
+                    <h3>暂无工具</h3>
+                    <p>暂无可用的工具。</p>
+                </div>
+                
+                <div v-else>
+                    <div v-for="tool in filteredTools" :key="tool.id" class="tool-item">
+                        <div class="tool-info">
+                            <div class="tool-icon">{{ getIcon(tool.icon) }}</div>
+                            <div class="tool-name">{{ tool.name }}</div>
+                            <div class="tool-desc">{{ tool.description }}</div>
+                        </div>
+                        <button class="remove-tool-btn" @click="showDeleteToolDialog(tool)">删除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 删除分类确认对话框 -->
+        <div class="confirm-dialog" :class="{ show: showCategoryDialog }">
+            <div class="dialog-content">
+                <div class="dialog-title">确认删除分类</div>
+                <div class="dialog-message">
+                    您确定要删除分类 "<strong>{{ categoryToDelete ? categoryToDelete.name : '' }}</strong>" 吗？
+                    <br><br>
+                    此操作将永久删除该分类及其所有工具，且无法恢复。
+                </div>
+                <div class="dialog-actions">
+                    <button class="btn btn-secondary" @click="hideDeleteCategoryDialog">取消</button>
+                    <button class="btn btn-danger" @click="deleteCategory">删除</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 删除工具确认对话框 -->
+        <div class="confirm-dialog" :class="{ show: showToolDialog }">
+            <div class="dialog-content">
+                <div class="dialog-title">确认删除工具</div>
+                <div class="dialog-message">
+                    您确定要删除工具 "<strong>{{ toolToDelete ? toolToDelete.name : '' }}</strong>" 吗？
+                    <br><br>
+                    此操作将永久删除该工具，且无法恢复。
+                </div>
+                <div class="dialog-actions">
+                    <button class="btn btn-secondary" @click="hideDeleteToolDialog">取消</button>
+                    <button class="btn btn-danger" @click="deleteTool">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    categories: [],
+                    allTools: [],
+                    selectedCategoryId: '',
+                    showCategoryDialog: false,
+                    showToolDialog: false,
+                    categoryToDelete: null,
+                    toolToDelete: null,
+                    successMessage: '',
+                    errorMessage: ''
+                };
+            },
+            async mounted() {
+                await this.loadCategories();
+                await this.loadAllTools();
+            },
+            computed: {
+                filteredCategories() {
+                    if (!this.selectedCategoryId) {
+                        return this.categories;
+                    }
+                    return this.categories.filter(c => c.id === this.selectedCategoryId);
+                },
+                
+                filteredTools() {
+                    if (!this.selectedCategoryId) {
+                        return this.allTools;
+                    }
+                    return this.allTools.filter(t => t.categoryId === this.selectedCategoryId);
+                }
+            },
+            methods: {
+                async loadCategories() {
+                    try {
+                        const categoryData = await window.ToolboxUtils.loadConfig('tools/config.json');
+                        if (categoryData) {
+                            this.categories = categoryData.categories;
+                        }
+                        
+                    } catch (error) {
+                        console.error('加载分类数据失败:', error);
+                        this.errorMessage = '无法加载分类数据，请检查网络连接或文件路径。';
+                    }
+                },
+                
+                async loadAllTools() {
+                    try {
+                        this.allTools = [];
+                        for (let category of this.categories) {
+                            try {
+                                const categoryPath = category.path.replace('/tools/categories', '');
+                                const toolData = await window.ToolboxUtils.loadConfig(`tools/categories${categoryPath}/config.json`);
+                                if (toolData) {
+                                    // 为工具添加分类信息
+                                    toolData.tools.forEach(tool => {
+                                        this.allTools.push({
+                                            ...tool,
+                                            categoryId: category.id,
+                                            categoryName: category.name
+                                        });
+                                    });
+                                }
+                            } catch (error) {
+                                console.error(`加载分类 ${category.name} 的工具数据失败:`, error);
+                            }
+                        }
+                        
+                    } catch (error) {
+                        console.error('加载工具数据失败:', error);
+                        this.errorMessage = '无法加载工具数据，请检查网络连接或文件路径。';
+                    }
+                },
+                
+                async loadToolsForCategory() {
+                    // 当选择分类时重新加载工具
+                    await this.loadAllTools();
+                },
+                
+                showDeleteCategoryDialog(category) {
+                    this.categoryToDelete = category;
+                    this.showCategoryDialog = true;
+                },
+                
+                hideDeleteCategoryDialog() {
+                    this.categoryToDelete = null;
+                    this.showCategoryDialog = false;
+                },
+                
+                async deleteCategory() {
+                    try {
+                        // 这里应该是实际删除分类的逻辑
+                        // 由于是静态页面，这里只是模拟删除
+                        console.log('删除分类:', this.categoryToDelete);
+                        
+                        // 从数组中移除
+                        this.categories = this.categories.filter(c => c.id !== this.categoryToDelete.id);
+                        
+                        // 从工具列表中移除该分类的工具
+                        this.allTools = this.allTools.filter(t => t.categoryId !== this.categoryToDelete.id);
+                        
+                        // 模拟更新JSON文件
+                        console.log('模拟更新tools/config.json');
+                        console.log(`模拟删除目录: tools/categories/${this.categoryToDelete.id}`);
+                        
+                        // 使用本地存储模拟保存
+                        const success = window.ToolboxUtils.localStorageMock.deleteConfig(`category_${this.categoryToDelete.id}`);
+                        if (success) {
+                            this.successMessage = `分类 "${this.categoryToDelete.name}" 已删除！`;
+                            this.errorMessage = '';
+                            this.hideDeleteCategoryDialog();
+                            
+                            // 3秒后清空成功消息
+                            setTimeout(() => {
+                                this.successMessage = '';
+                            }, 3000);
+                        } else {
+                            this.errorMessage = '删除失败，请重试';
+                            this.successMessage = '';
+                            this.hideDeleteCategoryDialog();
+                        }
+                        
+                    } catch (error) {
+                        console.error('删除失败:', error);
+                        this.errorMessage = '删除失败，请重试';
+                        this.successMessage = '';
+                        this.hideDeleteCategoryDialog();
+                    }
+                },
+                
+                showDeleteToolDialog(tool) {
+                    this.toolToDelete = tool;
+                    this.showToolDialog = true;
+                },
+                
+                hideDeleteToolDialog() {
+                    this.toolToDelete = null;
+                    this.showToolDialog = false;
+                },
+                
+                async deleteTool() {
+                    try {
+                        // 这里应该是实际删除工具的逻辑
+                        // 由于是静态页面，这里只是模拟删除
+                        console.log('删除工具:', this.toolToDelete);
+                        
+                        // 从数组中移除
+                        this.allTools = this.allTools.filter(t => t.id !== this.toolToDelete.id);
+                        
+                        // 模拟更新对应分类的JSON文件
+                        console.log(`模拟更新tools/categories/${this.toolToDelete.categoryId}/config.json`);
+                        console.log(`模拟删除目录: tools/categories/${this.toolToDelete.categoryId}/tools/${this.toolToDelete.id}`);
+                        
+                        // 使用本地存储模拟保存
+                        const success = window.ToolboxUtils.localStorageMock.deleteConfig(`tool_${this.toolToDelete.id}`);
+                        if (success) {
+                            this.successMessage = `工具 "${this.toolToDelete.name}" 已删除！`;
+                            this.errorMessage = '';
+                            this.hideDeleteToolDialog();
+                            
+                            // 3秒后清空成功消息
+                            setTimeout(() => {
+                                this.successMessage = '';
+                            }, 3000);
+                        } else {
+                            this.errorMessage = '删除失败，请重试';
+                            this.successMessage = '';
+                            this.hideDeleteToolDialog();
+                        }
+                        
+                    } catch (error) {
+                        console.error('删除失败:', error);
+                        this.errorMessage = '删除失败，请重试';
+                        this.successMessage = '';
+                        this.hideDeleteToolDialog();
+                    }
+                },
+                
+                getIcon(iconName) {
+                    const icons = {
+                        'DocumentAdd': '📄',
+                        'ChatLineSquare': '💬',
+                        'EditPen': '✏️',
+                        'Calendar': '📅',
+                        'Medal': '🏆',
+                        'Aim': '🎯',
+                        'Grid': '📊',
+                        'Tickets': '🎫',
+                        'UserFilled': '👤',
+                        'Dice': '🎲',
+                        'Check': '✅',
+                        'Trophy': '🏆',
+                        'DataAnalysis': '📈',
+                        'TrendCharts': '📉',
+                        'Collection': '📚',
+                        'Bell': '🔔',
+                        'Message': '💬',
+                        'FirstAid': '🏥',
+                        'Box': '📦',
+                        'List': '📋'
+                    };
+                    return icons[iconName] || '🔧';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

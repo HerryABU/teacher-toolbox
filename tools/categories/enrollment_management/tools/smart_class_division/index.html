@@ -1,0 +1,3505 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能分班/调班系统V8</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36D399',
+                        warning: '#FBBD23',
+                        danger: '#F87272',
+                        info: '#3ABFF8',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .transition-custom {
+                transition: all 0.3s ease;
+            }
+            .hover-scale {
+                transition: transform 0.2s;
+            }
+            .hover-scale:hover {
+                transform: scale(1.03);
+            }
+            .stats-table-container {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-md sticky top-0 z-50 transition-all duration-300">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-graduation-cap text-primary text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold text-primary">智能分班/调班系统</h1>
+            </div>
+            <div id="header-actions" class="hidden md:flex items-center space-x-4">
+                <button id="logout-btn" class="flex items-center text-gray-600 hover:text-danger transition-custom">
+                    <i class="fa fa-sign-out mr-1"></i> 注销
+                </button>
+                <button id="help-btn" class="flex items-center text-gray-600 hover:text-primary transition-custom">
+                    <i class="fa fa-question-circle mr-1"></i> 帮助
+                </button>
+                <button id="about-btn" class="flex items-center text-gray-600 hover:text-primary transition-custom">
+                    <i class="fa fa-info-circle mr-1"></i> 关于
+                </button>
+            </div>
+            <button id="mobile-menu-btn" class="md:hidden text-gray-600">
+                <i class="fa fa-bars text-xl"></i>
+            </button>
+        </div>
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t">
+            <div class="container mx-auto px-4 py-2 flex flex-col space-y-2">
+                <button id="mobile-logout-btn" class="flex items-center py-2 text-gray-600 hover:text-danger transition-custom">
+                    <i class="fa fa-sign-out mr-2"></i> 注销
+                </button>
+                <button id="mobile-help-btn" class="flex items-center py-2 text-gray-600 hover:text-primary transition-custom">
+                    <i class="fa fa-question-circle mr-2"></i> 帮助
+                </button>
+                <button id="mobile-about-btn" class="flex items-center py-2 text-gray-600 hover:text-primary transition-custom">
+                    <i class="fa fa-info-circle mr-2"></i> 关于
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        <!-- 首页/模式选择页 -->
+        <section id="home-page" class="max-w-4xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold mb-4 text-gray-800">分班/调班系统</h2>
+                <p class="text-gray-600 text-lg max-w-2xl mx-auto">
+                    高效、公平、智能的班级分配与调整解决方案，满足新生分班和校内调班需求
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8 mb-16">
+                <!-- 新分班选项 -->
+                <div class="bg-white rounded-xl p-6 card-shadow hover-scale cursor-pointer" id="new-class-btn">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-users text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">新分班</h3>
+                    <p class="text-gray-600">
+                        适用于新生入学首次分班，根据性别、成绩等因素进行均衡分配
+                    </p>
+                    <button class="mt-6 bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-custom w-full">
+                        开始新分班
+                    </button>
+                </div>
+                
+                <!-- 重调班选项 -->
+                <div class="bg-white rounded-xl p-6 card-shadow hover-scale cursor-pointer" id="adjust-class-btn">
+                    <div class="w-16 h-16 bg-info/10 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa fa-random text-info text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">重调班</h3>
+                    <p class="text-gray-600">
+                        用于校内原有班级调整，保留原班级信息，实现精细化调整
+                    </p>
+                    <button class="mt-6 bg-info hover:bg-info/90 text-white px-6 py-2 rounded-lg transition-custom w-full">
+                        开始重调班
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 使用说明 -->
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <h3 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fa fa-book text-primary mr-2"></i> 使用说明
+                </h3>
+                <div class="space-y-4 text-gray-700">
+                    <div>
+                        <h4 class="font-semibold text-lg mb-2">新分班流程</h4>
+                        <ol class="list-decimal list-inside space-y-1 ml-4">
+                            <li>准备包含学生姓名、性别、成绩（可选）的Excel表格</li>
+                            <li>上传文件并选择分班均衡选项（性别、成绩等）</li>
+                            <li>系统自动分班并展示结果分析</li>
+                            <li>可手动调整不满意的分配结果</li>
+                            <li>导出分班结果</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-lg mb-2">重调班流程</h4>
+                        <ol class="list-decimal list-inside space-y-1 ml-4">
+                            <li>准备包含学生原班级、原学号及其他信息的Excel表格</li>
+                            <li>上传文件并选择调整选项</li>
+                            <li>系统展示调整结果并保留原班级信息</li>
+                            <li>进行必要的手动调整</li>
+                            <li>导出包含原班级信息的调整结果</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 导入数据页 -->
+        <section id="import-page" class="hidden max-w-4xl mx-auto">
+            <div class="mb-6 flex items-center">
+                <button id="back-to-home" class="flex items-center text-gray-600 hover:text-primary transition-custom">
+                    <i class="fa fa-arrow-left mr-2"></i> 返回首页
+                </button>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 md:p-8 card-shadow mb-8">
+                <h2 class="text-2xl font-bold mb-6" id="import-title">导入新分班数据</h2>
+                
+                <div class="mb-8">
+                    <p class="text-gray-600 mb-4" id="import-description">
+                        请上传包含学生信息的Excel表格或ISDN文件。表格应包含姓名、性别信息，可包含各学科成绩和总分。
+                    </p>
+                    
+                    <!-- 文件上传区域 -->
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-custom cursor-pointer" id="file-drop-area">
+                        <i class="fa fa-cloud-upload text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-600 mb-2">拖放文件到此处，或点击选择文件</p>
+                        <p class="text-gray-400 text-sm">支持 .xlsx, .xls, .isdn 格式</p>
+                        <input type="file" id="file-input" class="hidden" accept=".xlsx,.xls,.isdn">
+                    </div>
+                    
+                    <!-- 上传文件信息 -->
+                    <div id="file-info" class="hidden mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <i class="fa fa-file-text-o text-primary mr-2"></i>
+                                <span id="file-name" class="font-medium"></span>
+                            </div>
+                            <button id="remove-file" class="text-danger hover:text-danger/80 transition-custom">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="mt-2 text-sm text-gray-500" id="file-size"></div>
+                    </div>
+                </div>
+                
+                <!-- 预览区域 -->
+                <div id="preview-container" class="hidden mb-6">
+                    <h3 class="text-xl font-semibold mb-4">数据预览</h3>
+                    <div class="overflow-x-auto max-h-80 overflow-y-auto border border-gray-200 rounded-lg">
+                        <table class="min-w-full bg-white">
+                            <thead>
+                                <tr id="preview-header" class="bg-gray-100 text-gray-700">
+                                    <!-- 预览表头将通过JS动态生成 -->
+                                </tr>
+                            </thead>
+                            <tbody id="preview-body">
+                                <!-- 预览内容将通过JS动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">
+                        显示前5行数据预览，共 <span id="total-records">0</span> 条记录
+                    </p>
+                </div>
+                
+                <div class="flex justify-end">
+                    <button id="next-to-settings" class="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-lg transition-custom disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        下一步：分班设置 <i class="fa fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 分班设置页 -->
+        <section id="settings-page" class="hidden max-w-4xl mx-auto">
+            <div class="mb-6 flex items-center">
+                <button id="back-to-import" class="flex items-center text-gray-600 hover:text-primary transition-custom">
+                    <i class="fa fa-arrow-left mr-2"></i> 返回导入
+                </button>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 md:p-8 card-shadow mb-8">
+                <h2 class="text-2xl font-bold mb-6">分班设置（约等待5秒）</h2>
+                
+                <div class="space-y-6">
+                    <!-- 班级数量设置 -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2" for="class-count">
+                            班级数量
+                        </label>
+                        <div class="flex items-center">
+                            <button id="decrease-class" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-l-lg transition-custom">
+                                <i class="fa fa-minus"></i>
+                            </button>
+                            <input type="number" id="class-count" min="1" max="20" value="4" 
+                                class="w-20 h-10 text-center border-y border-gray-300 focus:outline-none focus:border-primary">
+                            <button id="increase-class" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-r-lg transition-custom">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 分班均衡选项 -->
+                    <div>
+                        <h3 class="text-lg font-semibold mb-3">分班均衡选项（各学科均衡可不选）</h3>
+                        <div class="space-y-3" id="balance-options">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="balance-gender" class="w-4 h-4 text-primary focus:ring-primary rounded" checked>
+                                <label for="balance-gender" class="ml-2 text-gray-700">性别均衡</label>
+                            </div>
+                            <div class="flex items-center" id="balance-score-container">
+                                <input type="checkbox" id="balance-score" class="w-4 h-4 text-primary focus:ring-primary rounded" checked>
+                                <label for="balance-score" class="ml-2 text-gray-700">总分均衡</label>
+                            </div>
+                            <div class="flex items-center" id="balance-subjects-container">
+                                <input type="checkbox" id="balance-subjects" class="w-4 h-4 text-primary focus:ring-primary rounded" checked>
+                                <label for="balance-subjects" class="ml-2 text-gray-700">各学科均衡</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 学科选择（如果有成绩数据） -->
+                    <div id="subjects-selection" class="hidden">
+                        <h3 class="text-lg font-semibold mb-3">参与均衡的学科</h3>
+                        <div id="subjects-container" class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            <!-- 学科选择框将通过JS动态生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 班级命名方式 -->
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2" for="class-naming">
+                            班级命名方式
+                        </label>
+                        <select id="class-naming" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary">
+                            <option value="number">数字命名 (1班, 2班, 3班...)</option>
+                            <option value="letter">字母命名 (A班, B班, C班...)</option>
+                            <option value="custom">自定义前缀 (如: 初一(1)班)</option>
+                        </select>
+                        
+                        <div id="custom-prefix-container" class="mt-3 hidden">
+                            <label class="block text-gray-700 font-medium mb-2" for="class-prefix">
+                                班级名称前缀
+                            </label>
+                            <input type="text" id="class-prefix" placeholder="例如: 初一(" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary">
+                            <p class="text-sm text-gray-500 mt-1">系统将自动添加数字和右括号，如"初一(1)班"</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 flex justify-between">
+                    <button id="cancel-settings" class="border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-lg transition-custom">
+                        取消
+                    </button>
+                    <button id="start-classification" class="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-lg transition-custom">
+                        开始分班 <i class="fa fa-random ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 分班结果页 -->
+        <section id="result-page" class="hidden max-w-6xl mx-auto">
+            <div class="mb-6 flex items-center">
+                <button id="back-to-settings" class="flex items-center text-gray-600 hover:text-primary transition-custom">
+                    <i class="fa fa-arrow-left mr-2"></i> 返回设置
+                </button>
+            </div>
+            
+            <!-- 结果页操作按钮 -->
+            <div class="bg-white rounded-xl p-4 card-shadow mb-6">
+                <div class="flex flex-wrap justify-between items-center gap-2">
+                            <div class="flex flex-wrap gap-2">
+                                <button id="backup-data" class="flex items-center bg-info hover:bg-info/90 text-white px-3 py-2 rounded-lg transition-custom text-sm">
+                                    <i class="fa fa-download mr-1"></i> 备份信息
+                                </button>
+                                <button id="export-result" class="flex items-center bg-primary hover:bg-primary/90 text-white px-3 py-2 rounded-lg transition-custom text-sm">
+                                    <i class="fa fa-file-excel-o mr-1"></i> 导出结果
+                                </button>
+                                <button id="exit-result" class="flex items-center bg-danger hover:bg-danger/90 text-white px-3 py-2 rounded-lg transition-custom text-sm">
+                                    <i class="fa fa-sign-out mr-1"></i> 退出
+                                </button>
+                            </div>
+                            
+                            <div class="flex flex-wrap items-center gap-2">
+                                <button id="save-data" class="flex items-center bg-secondary hover:bg-secondary/90 text-white px-3 py-2 rounded-lg transition-custom text-sm">
+                                    <i class="fa fa-save mr-1"></i> 保存此方案
+                                </button>
+                        <div class="flex items-center">
+                            <label for="plan-select" class="mr-1 text-gray-700 text-sm">方案选择:</label>
+                            <select id="plan-select" class="p-1.5 border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-sm">
+                                <option value="0">默认方案</option>
+                                <!-- 方案选项将通过JS动态生成 -->
+                            </select>
+                        </div>
+                        <button id="generate-more-plans" class="flex items-center border border-secondary text-secondary hover:bg-secondary/10 px-3 py-2 rounded-lg transition-custom text-sm">
+                            <i class="fa fa-random mr-1"></i> 生成更多方案
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 统计图表区域 -->
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <!-- 性别比例图表 -->
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h3 class="text-lg font-semibold mb-4">各班性别比例</h3>
+                    <div class="h-80">
+                        <canvas id="gender-chart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 总分平均分图表 -->
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h3 class="text-lg font-semibold mb-4">各班总分平均分</h3>
+                    <div class="h-80">
+                        <canvas id="score-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 班级统计信息表格 - 添加滚动容器 -->
+            <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+                <h3 class="text-lg font-semibold mb-4">班级统计信息</h3>
+                <div class="stats-table-container">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700">
+                                <th class="py-3 px-4 text-left">班级</th>
+                                <th class="py-3 px-4 text-center">总人数</th>
+                                <th class="py-3 px-4 text-center">男生</th>
+                                <th class="py-3 px-4 text-center">女生</th>
+                                <th class="py-3 px-4 text-center">性别比例</th>
+                                <th class="py-3 px-4 text-center">总分平均分</th>
+                                <!-- 学科平均分表头将通过JS动态生成 -->
+                            </tr>
+                        </thead>
+                        <tbody id="class-stats-body">
+                            <!-- 班级统计数据将通过JS动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 分班结果 -->
+            <div class="bg-white rounded-xl p-6 card-shadow mb-6">
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                    <h3 class="text-lg font-semibold">分班结果（点击姓名可以手动调班）</h3>
+                    <div class="flex items-center w-full md:w-auto gap-3">
+                        <div class="relative flex-grow md:flex-grow-0 md:w-64">
+                            <input type="text" id="student-search" placeholder="搜索学生..." 
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary">
+                            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        <div class="flex items-center w-full md:w-auto">
+                            <label for="class-filter" class="mr-2 text-gray-600">班级筛选:</label>
+                            <select id="class-filter" class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary w-full md:w-auto">
+                                <option value="all">所有班级</option>
+                                <!-- 班级选项将通过JS动态生成 -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700" id="result-table-header">
+                                <th class="py-3 px-4 text-left">序号</th>
+                                <th class="py-3 px-4 text-left">姓名</th>
+                                <th class="py-3 px-4 text-center">性别</th>
+                                <th class="py-3 px-4 text-center">新班级</th>
+                                <!-- 原班级列（仅重调班显示） -->
+                                <th class="py-3 px-4 text-center" id="original-class-header" style="display:none">原班级</th>
+                                <!-- 成绩列将通过JS动态生成 -->
+                                <th class="py-3 px-4 text-center">总分</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classification-result-body">
+                            <!-- 分班结果将通过JS动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- 手动调整弹窗 -->
+    <div id="adjust-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-semibold" id="adjust-modal-title">调整学生班级</h3>
+                <button id="close-adjust-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-grow">
+                <div id="student-info" class="mb-6 p-4 bg-gray-50 rounded-lg">
+                    <!-- 学生信息将通过JS动态生成 -->
+                </div>
+                
+                <div class="mb-6">
+                    <h4 class="font-semibold mb-3">推荐调换学生（按匹配度）</h4>
+                    <div id="recommended-students" class="space-y-3">
+                        <!-- 推荐学生将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="font-semibold mb-3">强制调换</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                        <label class="block text-gray-700 mb-2" for="target-class">目标班级</label>
+                        <select id="target-class" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary">
+                            <!-- 班级选项将通过JS动态生成 -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="gender-filter">性别筛选</label>
+                        <select id="gender-filter" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary">
+                            <option value="all">全部</option>
+                            <option value="男">男生</option>
+                            <option value="女">女生</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 mb-2" for="target-student">目标学生（总分从高到低）</label>
+                        <select id="target-student" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary">
+                            <option value="">请先选择班级和性别</option>
+                        </select>
+                    </div>
+                    </div>
+                    <button id="force-swap" class="w-full bg-primary hover:bg-primary/90 text-white py-2 rounded-lg transition-custom disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        强制调换
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 帮助弹窗 -->
+    <div id="help-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-semibold">使用帮助</h3>
+                <button id="close-help-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-grow">
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-lg font-semibold mb-2">系统介绍</h4>
+                        <p class="text-gray-700">
+                            本系统是一款智能分班/调班工具，支持新生首次分班和校内班级调整两种模式，
+                            能够根据性别、成绩等因素进行均衡分配，同时提供手动调整功能，确保分班结果公平合理。
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-lg font-semibold mb-2">新分班操作步骤</h4>
+                        <ol class="list-decimal list-inside space-y-2 ml-4 text-gray-700">
+                            <li>点击首页"新分班"按钮进入分班流程</li>
+                            <li>上传包含学生信息的Excel表格（需包含姓名、性别，可包含成绩）</li>
+                            <li>设置班级数量、分班均衡选项和班级命名方式</li>
+                            <li>系统自动分班并展示结果</li>
+                            <li>如需调整，可点击学生姓名进行调换</li>
+                            <li>确认结果后，可保存、备份或导出分班结果</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 关于弹窗 -->
+    <div id="about-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl w-full max-w-md p-6">
+            <div class="text-center mb-4">
+                <i class="fa fa-graduation-cap text-primary text-4xl mb-2"></i>
+                <h3 class="text-xl font-bold">智能分班/调班系统</h3>
+                <p class="text-gray-500">版本 1.0.0</p>
+            </div>
+            
+            <div class="space-y-4 text-gray-700">
+                <p>
+                    本系统是一款专为学校设计的班级分配与调整工具，旨在实现公平、高效、智能的分班过程。
+                </p>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button id="close-about-modal" class="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg transition-custom">
+                    了解了
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 通知提示框 -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-dark text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 flex items-center z-50">
+        <i id="toast-icon" class="fa fa-check-circle mr-2"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t py-6">
+        <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+            <p>© 2023 智能分班/调班系统 - 版权所有</p>
+        </div>
+    </footer>
+
+    <script>
+        // 全局变量
+        let currentMode = 'new'; // 'new' 或 'adjust'
+        let studentData = [];    // 存储学生数据
+        let classData = [];      // 存储分班结果
+        let allAssignmentPlans = []; // 存储所有分班方案
+        let currentPlanIndex = 0; // 当前选中的方案索引
+        let classCount = 4;      // 默认班级数量
+        let balanceOptions = {   // 分班均衡选项
+            gender: true,
+            score: true,
+            subjects: true
+        };
+        let subjectList = [];    // 学科列表
+        let selectedSubjects = []; // 选中的学科
+        let classNaming = 'number'; // 班级命名方式
+        let classPrefix = '';    // 班级名称前缀
+        let adjustmentHistory = []; // 调整历史记录
+        
+        // DOM 元素
+        const pages = {
+            home: document.getElementById('home-page'),
+            import: document.getElementById('import-page'),
+            settings: document.getElementById('settings-page'),
+            result: document.getElementById('result-page')
+        };
+        
+        // 更新方案选择下拉框
+        function updatePlanSelect() {
+            const planSelect = document.getElementById('plan-select');
+            if (!planSelect || !allAssignmentPlans || allAssignmentPlans.length === 0) return;
+
+            // 清空现有选项
+            planSelect.innerHTML = '';
+
+            // 添加方案选项
+            allAssignmentPlans.forEach((plan, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `方案 ${index + 1}`;
+                if (index === currentPlanIndex) {
+                    option.selected = true;
+                }
+                planSelect.appendChild(option);
+            });
+        }
+
+        // 应用选定的方案
+        function applySelectedPlan() {
+            if (!allAssignmentPlans || allAssignmentPlans.length === 0 || currentPlanIndex >= allAssignmentPlans.length) return;
+
+            // 应用当前选中的方案
+            const selectedPlan = allAssignmentPlans[currentPlanIndex];
+            classData = selectedPlan.map(cls => ({
+                name: cls.className,
+                students: cls.students.map(student => ({
+                    ...student,
+                    newClass: cls.className
+                })),
+                stats: {
+                    male: cls.maleCount,
+                    female: cls.femaleCount,
+                    totalScore: cls.totalScoreTotal,
+                    subjectScores: {}
+                }
+            }));
+
+            // 初始化学科分数统计
+            subjectList.forEach(subject => {
+                classData.forEach(cls => {
+                    cls.stats.subjectScores[subject] = cls.students
+                        .filter(student => student[subject] !== undefined)
+                        .reduce((sum, student) => sum + parseFloat(student[subject] || 0), 0);
+                });
+            });
+
+            // 更新UI
+            generateCharts();
+            generateClassStatsTable();
+            updateResultTable();
+            updateClassFilter();
+
+            showToast(`已应用方案 ${currentPlanIndex + 1}`, 'success');
+        }
+
+        // 初始化事件监听
+            function initEventListeners() {
+                // 方案选择下拉框事件监听
+                const planSelect = document.getElementById('plan-select');
+                if (planSelect) {
+                    planSelect.addEventListener('change', function() {
+                        currentPlanIndex = parseInt(this.value);
+                        applySelectedPlan();
+                    });
+                }
+
+                // 手动调班弹窗关闭按钮事件监听
+                const closeAdjustModalBtn = document.getElementById('close-adjust-modal');
+                if (closeAdjustModalBtn) {
+                    closeAdjustModalBtn.addEventListener('click', () => {
+                        document.getElementById('adjust-modal').classList.add('hidden');
+                    });
+                }
+
+            // 生成更多方案按钮事件监听
+            const generateMoreBtn = document.getElementById('generate-more-plans');
+            if (generateMoreBtn) {
+                generateMoreBtn.addEventListener('click', function() {
+                    if (!ClassAssignmentCore || !ClassAssignmentCore.generateAlternativeAssignments) {
+                        showToast('生成更多方案功能不可用', 'error');
+                        return;
+                    }
+
+                    showLoadingModal();
+
+                    setTimeout(() => {
+                        try {
+                            const newPlans = ClassAssignmentCore.generateAlternativeAssignments(5);
+                            allAssignmentPlans = allAssignmentPlans.concat(newPlans);
+                            window.allAssignmentPlans = allAssignmentPlans;
+
+                            updatePlanSelect();
+                            hideLoadingModal();
+                            showToast(`已生成 ${newPlans.length} 个新方案`, 'success');
+                        } catch (error) {
+                            hideLoadingModal();
+                            showToast('生成方案失败: ' + error.message, 'error');
+                            console.error('生成方案错误:', error);
+                        }
+                    }, 500);
+                });
+            }
+            // 首页模式选择
+            document.getElementById('new-class-btn').addEventListener('click', () => {
+                currentMode = 'new';
+                showImportPage();
+            });
+            
+            document.getElementById('adjust-class-btn').addEventListener('click', () => {
+                currentMode = 'adjust';
+                showImportPage();
+            });
+            
+            // 返回按钮
+            document.getElementById('back-to-home').addEventListener('click', showHomePage);
+            document.getElementById('back-to-import').addEventListener('click', showImportPage);
+            document.getElementById('back-to-settings').addEventListener('click', showSettingsPage);
+            document.getElementById('cancel-settings').addEventListener('click', showImportPage);
+            
+            // 移动端菜单
+            document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+                const mobileMenu = document.getElementById('mobile-menu');
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // 注销按钮事件
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            document.getElementById('mobile-logout-btn').addEventListener('click', () => {
+                handleLogout();
+                document.getElementById('mobile-menu').classList.add('hidden');
+            });
+            
+            // 帮助和关于弹窗
+            document.getElementById('help-btn').addEventListener('click', () => {
+                document.getElementById('help-modal').classList.remove('hidden');
+            });
+            
+            document.getElementById('mobile-help-btn').addEventListener('click', () => {
+                document.getElementById('help-modal').classList.remove('hidden');
+                document.getElementById('mobile-menu').classList.add('hidden');
+            });
+            
+            document.getElementById('about-btn').addEventListener('click', () => {
+                document.getElementById('about-modal').classList.remove('hidden');
+            });
+            
+            document.getElementById('mobile-about-btn').addEventListener('click', () => {
+                document.getElementById('about-modal').classList.remove('hidden');
+                document.getElementById('mobile-menu').classList.add('hidden');
+            });
+            
+            document.getElementById('close-help-modal').addEventListener('click', () => {
+                document.getElementById('help-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('close-about-modal').addEventListener('click', () => {
+                document.getElementById('about-modal').classList.add('hidden');
+            });
+            
+            // 文件上传
+            const fileDropArea = document.getElementById('file-drop-area');
+            const fileInput = document.getElementById('file-input');
+            
+            fileDropArea.addEventListener('click', () => fileInput.click());
+            
+            fileInput.addEventListener('change', handleFileUpload);
+            
+            // 拖放功能
+            fileDropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileDropArea.classList.add('border-primary');
+            });
+            
+            fileDropArea.addEventListener('dragleave', () => {
+                fileDropArea.classList.remove('border-primary');
+            });
+            
+            fileDropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileDropArea.classList.remove('border-primary');
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileUpload();
+                }
+            });
+            
+            // 移除文件
+            document.getElementById('remove-file').addEventListener('click', () => {
+                fileInput.value = '';
+                document.getElementById('file-info').classList.add('hidden');
+                document.getElementById('preview-container').classList.add('hidden');
+                document.getElementById('next-to-settings').disabled = true;
+                studentData = [];
+            });
+            
+            // 下一步按钮
+            document.getElementById('next-to-settings').addEventListener('click', showSettingsPage);
+            
+            // 班级数量调整
+            document.getElementById('decrease-class').addEventListener('click', () => {
+                const classCountInput = document.getElementById('class-count');
+                if (parseInt(classCountInput.value) > 1) {
+                    classCountInput.value = parseInt(classCountInput.value) - 1;
+                    classCount = parseInt(classCountInput.value);
+                }
+            });
+            
+            document.getElementById('increase-class').addEventListener('click', () => {
+                const classCountInput = document.getElementById('class-count');
+                if (parseInt(classCountInput.value) < 20) {
+                    classCountInput.value = parseInt(classCountInput.value) + 1;
+                    classCount = parseInt(classCountInput.value);
+                }
+            });
+            
+            document.getElementById('class-count').addEventListener('change', (e) => {
+                let value = parseInt(e.target.value);
+                if (isNaN(value) || value < 1) value = 1;
+                if (value > 20) value = 20;
+                e.target.value = value;
+                classCount = value;
+            });
+            
+            // 分班均衡选项
+            document.getElementById('balance-gender').addEventListener('change', (e) => {
+                balanceOptions.gender = e.target.checked;
+            });
+            
+            document.getElementById('balance-score').addEventListener('change', (e) => {
+                balanceOptions.score = e.target.checked;
+            });
+            
+            document.getElementById('balance-subjects').addEventListener('change', (e) => {
+                balanceOptions.subjects = e.target.checked;
+                updateSubjectSelection();
+            });
+            
+            // 班级命名方式
+            document.getElementById('class-naming').addEventListener('change', (e) => {
+                classNaming = e.target.value;
+                if (classNaming === 'custom') {
+                    document.getElementById('custom-prefix-container').classList.remove('hidden');
+                } else {
+                    document.getElementById('custom-prefix-container').classList.add('hidden');
+                }
+            });
+            
+            document.getElementById('class-prefix').addEventListener('change', (e) => {
+                classPrefix = e.target.value;
+            });
+            
+            // 开始分班按钮
+            document.getElementById('start-classification').addEventListener('click', startClassification);
+            
+            // 结果页按钮
+            document.getElementById('save-data').addEventListener('click', saveData);
+            document.getElementById('backup-data').addEventListener('click', backupData);
+            document.getElementById('export-result').addEventListener('click', exportResult);
+            
+            // 退出按钮
+            document.getElementById('exit-result').addEventListener('click', function() {
+                if (confirm('确定要退出吗？当前未保存的数据将会丢失。')) {
+                    // 重置数据
+                    studentData = [];
+                    classData = [];
+                    adjustmentHistory = [];
+                    
+                    showHomePage();
+                    showToast('已退出到首页', 'info');
+                }
+            });
+            
+            // 刷新统计按钮
+            document.getElementById('refresh-stats').addEventListener('click', function() {
+                recalculateClassStats();
+                generateCharts();
+                generateClassStatsTable();
+                updateResultTable();
+                showToast('班级统计信息已刷新', 'success');
+            });
+            
+            // 重新调整按钮
+            document.getElementById('reclassify-all').addEventListener('click', reclassifyAll);
+            document.getElementById('rebalance-score').addEventListener('click', rebalanceScore);
+            document.getElementById('rebalance-gender').addEventListener('click', rebalanceGender);
+            
+            // 班级筛选和学生搜索
+            document.getElementById('class-filter').addEventListener('change', updateResultTable);
+            document.getElementById('student-search').addEventListener('input', updateResultTable);
+            
+            // 手动调整弹窗
+            document.getElementById('close-adjust-modal').addEventListener('click', () => {
+                document.getElementById('adjust-modal').classList.add('hidden');
+            });
+            
+            // 强制调换按钮
+            document.getElementById('force-swap').addEventListener('click', forceSwapStudents);
+            
+            // 目标班级选择变化
+            document.getElementById('target-class').addEventListener('change', updateTargetStudents);
+        }
+        
+        // 处理注销功能
+        function handleLogout() {
+            if (confirm('确定要注销吗？所有未保存的数据将会丢失。')) {
+                // 清除所有数据
+                studentData = [];
+                classData = [];
+                adjustmentHistory = [];
+                
+                // 清除本地存储
+                localStorage.removeItem('classSystemData');
+                
+                // 返回首页
+                showHomePage();
+                showToast('已成功注销', 'success');
+            }
+        }
+        
+        // 页面切换函数
+        function showHomePage() {
+            Object.values(pages).forEach(page => page.classList.add('hidden'));
+            pages.home.classList.remove('hidden');
+        }
+        
+        function showImportPage() {
+            Object.values(pages).forEach(page => page.classList.add('hidden'));
+            pages.import.classList.remove('hidden');
+            
+            // 根据模式更新导入页面标题和描述
+            const importTitle = document.getElementById('import-title');
+            const importDescription = document.getElementById('import-description');
+            
+            if (currentMode === 'new') {
+                importTitle.textContent = '导入新分班数据';
+                importDescription.textContent = 
+                    '请上传包含学生信息的Excel表格或ISDN文件。表格应包含姓名、性别信息，可包含各学科成绩和总分。';
+            } else {
+                importTitle.textContent = '导入重调班数据';
+                importDescription.textContent = 
+                    '请上传包含学生信息的Excel表格或ISDN文件。表格应包含姓名、性别、原班级、原学号信息，可包含各学科成绩和总分。';
+            }
+        }
+        
+        function showSettingsPage() {
+            Object.values(pages).forEach(page => page.classList.add('hidden'));
+            pages.settings.classList.remove('hidden');
+            
+            // 重置班级数量
+            document.getElementById('class-count').value = classCount;
+            
+            // 重置均衡选项
+            document.getElementById('balance-gender').checked = balanceOptions.gender;
+            document.getElementById('balance-score').checked = balanceOptions.score;
+            document.getElementById('balance-subjects').checked = balanceOptions.subjects;
+            
+            // 重置班级命名方式
+            document.getElementById('class-naming').value = classNaming;
+            if (classNaming === 'custom') {
+                document.getElementById('custom-prefix-container').classList.remove('hidden');
+                document.getElementById('class-prefix').value = classPrefix;
+            } else {
+                document.getElementById('custom-prefix-container').classList.add('hidden');
+            }
+            
+            // 更新学科选择
+            updateSubjectSelection();
+        }
+        
+        function showResultPage() {
+            Object.values(pages).forEach(page => page.classList.add('hidden'));
+            pages.result.classList.remove('hidden');
+            
+            // 更新班级筛选下拉框
+            updateClassFilter();
+            
+            // 显示原班级列（仅重调班）
+            if (currentMode === 'adjust') {
+                document.getElementById('original-class-header').style.display = 'table-cell';
+            } else {
+                document.getElementById('original-class-header').style.display = 'none';
+            }
+            
+            // 添加学科表头
+            addSubjectHeadersToResultTable();
+            
+            // 生成统计图表
+            generateCharts();
+            
+            // 生成班级统计表格
+            generateClassStatsTable();
+            
+            // 生成结果表格
+            updateResultTable();
+        }
+        
+        // 添加学科表头到结果表格
+        function addSubjectHeadersToResultTable() {
+            const headerRow = document.getElementById('result-table-header');
+            const originalClassHeader = document.getElementById('original-class-header');
+            const totalScoreHeader = headerRow.lastElementChild;
+            
+            // 清除已有的学科表头（保留总分表头）
+            let currentNode = totalScoreHeader.previousElementSibling;
+            while (currentNode && currentNode !== originalClassHeader && 
+                  !currentNode.id && currentNode.textContent !== '新班级') {
+                const nextNode = currentNode.previousElementSibling;
+                headerRow.removeChild(currentNode);
+                currentNode = nextNode;
+            }
+            
+            // 添加新的学科表头（不包含"平均分"字样）
+            if (subjectList.length > 0) {
+                // 确定插入位置（在原班级列后，总分列前）
+                let insertAfterNode = originalClassHeader.style.display !== 'none' 
+                    ? originalClassHeader 
+                    : headerRow.children[3]; // 新班级列
+                
+                subjectList.forEach(subject => {
+                    const th = document.createElement('th');
+                    th.className = 'py-3 px-4 text-center';
+                    th.textContent = subject; // 直接使用学科名称，不加"平均分"
+                    headerRow.insertBefore(th, insertAfterNode.nextSibling);
+                    insertAfterNode = th;
+                });
+            }
+        }
+        
+        // 处理文件上传
+        function handleFileUpload() {
+            const fileInput = document.getElementById('file-input');
+            if (!fileInput.files.length) return;
+            
+            const file = fileInput.files[0];
+            const fileName = file.name;
+            const fileSize = (file.size / 1024).toFixed(2) + ' KB';
+            
+            // 显示文件信息
+            document.getElementById('file-name').textContent = fileName;
+            document.getElementById('file-size').textContent = fileSize;
+            document.getElementById('file-info').classList.remove('hidden');
+            
+            // 处理文件内容
+            const reader = new FileReader();
+            
+            if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                        
+                        processStudentData(jsonData);
+                    } catch (error) {
+                        showToast('文件解析错误，请检查文件格式', 'error');
+                        console.error('Excel解析错误:', error);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (fileName.endsWith('.isdn')) {
+                reader.onload = function(e) {
+                    try {
+                        const content = e.target.result;
+                        const lines = content.split('\n').filter(line => line.trim() !== '');
+                        const jsonData = parseISDNFile(lines);
+                        
+                        processStudentData(jsonData);
+                    } catch (error) {
+                        showToast('文件解析错误，请检查文件格式', 'error');
+                        console.error('ISDN解析错误:', error);
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                showToast('不支持的文件格式，请上传Excel或ISDN文件', 'error');
+            }
+        }
+        
+        // 解析ISDN文件
+        function parseISDNFile(lines) {
+            const data = [];
+            // 跳过标题行
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const fields = line.split(/\s+/);
+                let index = 0;
+                
+                const student = {
+                    序号: fields[index++],
+                    学籍号: fields[index++],
+                    姓名: fields[index++],
+                    性别: fields[index++]
+                };
+                
+                // 如果是重调班模式，解析原班级和原学号
+                if (currentMode === 'adjust') {
+                    student['原班级'] = fields[index++];
+                    student['原学号'] = fields[index++];
+                }
+                
+                // 解析成绩（假设最后一个字段是总分）
+                const totalScoreIndex = currentMode === 'adjust' ? fields.length - 1 : fields.length - 1;
+                let subjectIndex = 1;
+                
+                while (index < totalScoreIndex) {
+                    student[`学科${subjectIndex}成绩`] = parseFloat(fields[index++]);
+                    subjectIndex++;
+                }
+                
+                // 解析总分
+                student['总分'] = parseFloat(fields[index++]);
+                
+                data.push(student);
+            }
+            
+            return data;
+        }
+        
+        // 处理学生数据
+        function processStudentData(jsonData) {
+            if (!jsonData || jsonData.length === 0) {
+                showToast('未找到有效数据，请检查文件内容', 'error');
+                return;
+            }
+            
+            studentData = jsonData;
+            
+            // 识别学科列
+            identifySubjects();
+            
+            // 显示数据预览
+            showDataPreview();
+            
+            // 启用下一步按钮
+            document.getElementById('next-to-settings').disabled = false;
+            
+            showToast(`成功导入 ${jsonData.length} 条学生数据`, 'success');
+        }
+        
+        // 识别学科列
+            function identifySubjects() {
+                subjectList = [];
+                if (studentData.length === 0) return;
+
+                const firstStudent = studentData[0];
+                const nonSubjectFields = ['序号', '学籍号', '姓名', '性别', '班级', '学号', '原班级', '原学号', '总分'];
+
+                // 定义常见学科列表，确保包含'政史'、'史政'和'体健'
+                const commonSubjects = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '政史', '史政', '道法', '体育', '体健', '地理', '音乐', '美术', '信息', '科学'];
+
+                // 收集所有可能的学科列
+                for (const key in firstStudent) {
+                    if (!nonSubjectFields.includes(key)) {
+                        const cleanedKey = key.replace('成绩', '').replace('分数', '');
+                        // 检查是否是学科列
+                        if (key.includes('成绩') || key.includes('分数') || 
+                            commonSubjects.includes(key) || commonSubjects.includes(cleanedKey)) {
+                            // 确保添加的是原始学科名，而不是去掉后缀的
+                            subjectList.push(key);
+                        }
+                    }
+                }
+
+                // 去重，防止重复添加相同的学科
+                subjectList = [...new Set(subjectList)];
+
+                // 特殊处理'政史'和'史政'，确保它们不会被遗漏
+                const hasPolitics = subjectList.some(subject => subject.includes('政治') || subject.replace('成绩', '').replace('分数', '').includes('政治'));
+                const hasHistory = subjectList.some(subject => subject.includes('历史') || subject.replace('成绩', '').replace('分数', '').includes('历史'));
+                const hasZhShi = subjectList.some(subject => subject.includes('政史') || subject.replace('成绩', '').replace('分数', '').includes('政史'));
+                const hasShiZheng = subjectList.some(subject => subject.includes('史政') || subject.replace('成绩', '').replace('分数', '').includes('史政'));
+
+                if (!hasZhShi && !hasShiZheng && hasPolitics && hasHistory) {
+                    showToast('检测到政治和历史学科，建议合并为"政史"或"史政"以获得更准确的统计', 'info');
+                }
+
+                // 确保'体健'科目被正确识别
+                if (!subjectList.some(subject => subject.includes('体健') || subject.replace('成绩', '').replace('分数', '').includes('体健'))) {
+                    // 检查是否有'体育'
+                    if (subjectList.some(subject => subject.includes('体育') || subject.replace('成绩', '').replace('分数', '').includes('体育'))) {
+                        showToast('检测到体育学科，如需体健统计请确保列名为"体健"或"体健成绩"', 'info');
+                    }
+                }
+            
+            // 如果没有识别到学科，但有总分，也认为有成绩数据
+            const hasScoreData = subjectList.length > 0 || '总分' in firstStudent;
+            
+            // 根据是否有成绩数据显示或隐藏相关选项
+            if (hasScoreData) {
+                document.getElementById('balance-score-container').style.display = 'flex';
+                document.getElementById('balance-subjects-container').style.display = 'flex';
+                
+                // 默认选中所有学科
+                selectedSubjects = [...subjectList];
+            } else {
+                document.getElementById('balance-score-container').style.display = 'none';
+                document.getElementById('balance-subjects-container').style.display = 'none';
+                document.getElementById('subjects-selection').classList.add('hidden');
+                
+                // 强制取消成绩相关的均衡选项
+                balanceOptions.score = false;
+                balanceOptions.subjects = false;
+                document.getElementById('balance-score').checked = false;
+                document.getElementById('balance-subjects').checked = false;
+            }
+        }
+        
+        // 更新学科选择区域
+        function updateSubjectSelection() {
+            const container = document.getElementById('subjects-container');
+            container.innerHTML = '';
+            
+            if (balanceOptions.subjects && subjectList.length > 0) {
+                document.getElementById('subjects-selection').classList.remove('hidden');
+                
+                subjectList.forEach(subject => {
+                    const isSelected = selectedSubjects.includes(subject);
+                    
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center';
+                    div.innerHTML = `
+                        <input type="checkbox" id="subject-${subject}" class="w-4 h-4 text-primary focus:ring-primary rounded" ${isSelected ? 'checked' : ''}>
+                        <label for="subject-${subject}" class="ml-2 text-gray-700 text-sm">${subject}</label>
+                    `;
+                    
+                    container.appendChild(div);
+                    
+                    // 添加事件监听
+                    div.querySelector('input').addEventListener('change', (e) => {
+                        if (e.target.checked) {
+                            if (!selectedSubjects.includes(subject)) {
+                                selectedSubjects.push(subject);
+                            }
+                        } else {
+                            selectedSubjects = selectedSubjects.filter(s => s !== subject);
+                        }
+                    });
+                });
+            } else {
+                document.getElementById('subjects-selection').classList.add('hidden');
+            }
+        }
+        
+        // 显示数据预览
+        function showDataPreview() {
+            const headerContainer = document.getElementById('preview-header');
+            const bodyContainer = document.getElementById('preview-body');
+            const totalRecordsElement = document.getElementById('total-records');
+            
+            // 清空预览
+            headerContainer.innerHTML = '';
+            bodyContainer.innerHTML = '';
+            
+            if (studentData.length === 0) return;
+            
+            // 显示总记录数
+            totalRecordsElement.textContent = studentData.length;
+            
+            // 获取表头
+            const headers = Object.keys(studentData[0]);
+            
+            // 创建表头
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.className = 'py-3 px-4 text-left';
+                th.textContent = header;
+                headerContainer.appendChild(th);
+            });
+            
+            // 创建表体（最多显示5行）
+            const displayCount = Math.min(5, studentData.length);
+            for (let i = 0; i < displayCount; i++) {
+                const student = studentData[i];
+                const tr = document.createElement('tr');
+                tr.className = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                
+                headers.forEach(header => {
+                    const td = document.createElement('td');
+                    td.className = 'py-3 px-4 border-t border-gray-200';
+                    td.textContent = student[header] !== undefined ? student[header] : '';
+                    tr.appendChild(td);
+                });
+                
+                bodyContainer.appendChild(tr);
+            }
+            
+            // 显示预览区域
+            document.getElementById('preview-container').classList.remove('hidden');
+        }
+        
+        // 分班逻辑已内嵌在文件中，无需动态加载
+
+        // 显示loading弹窗
+        function showLoadingModal() {
+            // 检查是否已存在loading弹窗
+            if (document.getElementById('loading-modal')) {
+                document.getElementById('loading-modal').remove();
+            }
+
+            // 创建弹窗元素
+            const modal = document.createElement('div');
+            modal.id = 'loading-modal';
+            modal.className = 'fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-8 flex flex-col items-center shadow-xl">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                    <p class="text-gray-700 text-lg">分班中，请稍候......</p>
+                </div>
+            `;
+
+            // 添加到文档
+            document.body.appendChild(modal);
+        }
+
+        // 隐藏loading弹窗
+        function hideLoadingModal() {
+            const modal = document.getElementById('loading-modal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // 开始分班
+        function startClassification() {
+            // 显示loading弹窗
+            showLoadingModal();
+
+            // 保存当前设置
+            classCount = parseInt(document.getElementById('class-count').value);
+            const balanceGender = document.getElementById('balance-gender').checked;
+            const balanceScore = document.getElementById('balance-score').checked;
+            classPrefix = document.getElementById('class-prefix').value;
+
+            // 确保studentData已加载
+            if (!studentData || studentData.length === 0) {
+                hideLoadingModal();
+                showToast('请先导入学生数据', 'error');
+                return;
+            }
+
+            // 添加一个小延迟，确保弹窗显示
+            setTimeout(() => {
+
+                try {
+                    // 初始化分班核心模块
+                    ClassAssignmentCore.init(studentData);
+
+                    // 分析字段信息
+                    const fieldInfo = ClassAssignmentCore.analyzeFields();
+                    console.log('字段分析完成:', fieldInfo);
+
+                    // 配置分班参数
+                    ClassAssignmentCore
+                        .setClassCount(classCount)
+                        .setClassNamePrefix(classPrefix || '');
+
+                    // 配置均衡选项
+                    const balanceOptions = {
+                        balanceGender: balanceGender,
+                        balanceTotal: balanceScore
+                    };
+
+                    // 执行分班
+                    const results = ClassAssignmentCore.performClassAssignment(balanceOptions);
+                    console.log('分班完成:', results);
+
+                    // 生成替代分班方案
+                    const alternativePlans = ClassAssignmentCore.generateAlternativeAssignments(5); // 生成5个方案
+                    console.log('生成替代方案数量:', alternativePlans.length);
+
+                    // 存储所有方案
+                    window.allAssignmentPlans = alternativePlans;
+                    allAssignmentPlans = alternativePlans;
+                    currentPlanIndex = 0;
+
+                    // 更新方案选择下拉框
+        // 方案选择下拉框更新函数 - 只显示当前选中的方案
+        function updatePlanSelect() {
+            const planSelect = document.getElementById('plan-select');
+            if (!planSelect) return;
+
+            // 清空现有选项
+            planSelect.innerHTML = '';
+
+            // 只添加当前选中的方案
+            if (allAssignmentPlans && allAssignmentPlans.length > 0) {
+                const currentPlan = allAssignmentPlans[currentPlanIndex];
+                const option = document.createElement('option');
+                option.value = currentPlanIndex;
+                option.textContent = currentPlan.name || `方案 ${currentPlanIndex + 1}`;
+                planSelect.appendChild(option);
+            }
+
+            // 选中当前方案
+            planSelect.value = currentPlanIndex;
+        }
+
+        // 调用函数更新方案选择下拉框
+        updatePlanSelect();
+
+                    // 转换结果格式以适应现有UI
+                    classData = results.map(cls => ({
+                        name: cls.className,
+                        students: cls.students.map(student => ({
+                            ...student,
+                            newClass: cls.className
+                        })),
+                        stats: {
+                            male: cls.maleCount,
+                            female: cls.femaleCount,
+                            totalScore: cls.totalScoreTotal,
+                            subjectScores: {}
+                        }
+                    }));
+
+                    // 初始化学科分数统计
+                    subjectList.forEach(subject => {
+                        classData.forEach(cls => {
+                            cls.stats.subjectScores[subject] = cls.students
+                                .filter(student => student[subject] !== undefined)
+                                .reduce((sum, student) => sum + parseFloat(student[subject] || 0), 0);
+                        });
+                    });
+
+                    // 重置调整历史
+                    adjustmentHistory = ClassAssignmentCore.getTransferHistory();
+
+                    // 显示结果页面
+                    showResultPage();
+
+                    hideLoadingModal();
+                    showToast('分班完成', 'success');
+                } catch (error) {
+                    console.error('分班过程中出错:', error);
+                    hideLoadingModal();
+                    showToast('分班失败: ' + error.message, 'error');
+                }
+            }, 100); // 100毫秒延迟
+        }
+        
+        // 更新班级筛选下拉框
+        function updateClassFilter() {
+            const filterSelect = document.getElementById('class-filter');
+            filterSelect.innerHTML = '<option value="all">所有班级</option>';
+            
+            let hasFirstClass = false;
+            classData.forEach(cls => {
+                const option = document.createElement('option');
+                option.value = cls.name;
+                option.textContent = cls.name;
+                // 默认选中1班（精确匹配）
+                if (cls.name === '1班') {
+                    option.selected = true;
+                    hasFirstClass = true;
+                }
+                filterSelect.appendChild(option);
+            });
+            
+            // 如果没有1班，保持默认选中所有班级
+            if (!hasFirstClass) {
+                filterSelect.value = 'all';
+            }
+            
+            // 确保筛选器值变化时能触发表格更新
+            filterSelect.onchange = function() {
+                updateResultTable();
+            };
+        }
+        
+        // 重新计算班级统计信息
+        function recalculateClassStats() {
+            classData.forEach(cls => {
+                // 重置统计信息
+                cls.stats = {
+                    male: 0,
+                    female: 0,
+                    totalScore: 0,
+                    subjectScores: {}
+                };
+                
+                // 初始化学科分数统计
+                subjectList.forEach(subject => {
+                    cls.stats.subjectScores[subject] = 0;
+                });
+                
+                // 重新计算统计信息
+                cls.students.forEach(student => {
+                    if (student.性别 === '男') {
+                        cls.stats.male++;
+                    } else {
+                        cls.stats.female++;
+                    }
+                    
+                    if (student.总分) {
+                        cls.stats.totalScore += parseFloat(student.总分);
+                    }
+                    
+                    selectedSubjects.forEach(subject => {
+                        if (student[subject]) {
+                            cls.stats.subjectScores[subject] = (cls.stats.subjectScores[subject] || 0) + parseFloat(student[subject]);
+                        }
+                    });
+                });
+            });
+        }
+        
+        // 生成统计图表
+        function generateCharts() {
+            // 性别比例图表
+            const genderCtx = document.getElementById('gender-chart').getContext('2d');
+            
+            const classNames = classData.map(cls => cls.name);
+            const maleCounts = classData.map(cls => cls.stats.male);
+            const femaleCounts = classData.map(cls => cls.stats.female);
+            
+            if (window.genderChart) {
+                window.genderChart.destroy();
+            }
+            
+            window.genderChart = new Chart(genderCtx, {
+                type: 'bar',
+                data: {
+                    labels: classNames,
+                    datasets: [
+                        {
+                            label: '男生',
+                            data: maleCounts,
+                            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '女生',
+                            data: femaleCounts,
+                            backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: '班级'
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: '人数'
+                            },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+            
+            // 总分平均分图表
+            if (balanceOptions.score) {
+                const scoreCtx = document.getElementById('score-chart').getContext('2d');
+                
+                const avgScores = classData.map(cls => 
+                    cls.students.length > 0 ? (cls.stats.totalScore / cls.students.length).toFixed(1) : 0
+                );
+                
+                if (window.scoreChart) {
+                    window.scoreChart.destroy();
+                }
+                
+                // 为相邻班级创建不同颜色
+                        const colors = [
+                            'rgba(75, 192, 192, 0.7)',  // 绿色
+                            'rgba(54, 162, 235, 0.7)',  // 蓝色
+                            'rgba(255, 99, 132, 0.7)',  // 红色
+                            'rgba(255, 159, 64, 0.7)',  // 橙色
+                            'rgba(153, 102, 255, 0.7)', // 紫色
+                            'rgba(255, 206, 86, 0.7)',  // 黄色
+                            'rgba(97, 206, 162, 0.7)',  // 青绿色
+                            'rgba(162, 97, 206, 0.7)'   // 紫红色
+                        ];
+
+                        // 为每个班级分配颜色，确保相邻班级颜色不同
+                        const classColors = classNames.map((_, index) => {
+                            // 使用索引模颜色数组长度来循环使用颜色
+                            return colors[index % colors.length];
+                        });
+
+                        window.scoreChart = new Chart(scoreCtx, {
+                            type: 'bar',
+                            data: {
+                                labels: classNames,
+                                datasets: [{
+                                    label: '总分平均分',
+                                    data: avgScores,
+                                    backgroundColor: classColors,
+                                    borderColor: classColors.map(color => color.replace('0.7', '1')),
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    x: {
+                                        title: {
+                                            display: true,
+                                            text: '班级'
+                                        }
+                                    },
+                                    y: {
+                                        title: {
+                                            display: true,
+                                            text: '平均分'
+                                        },
+                                        beginAtZero: true
+                                    }
+                                }
+                            }
+                        });
+            } else {
+                // 如果不考虑总分均衡，隐藏总分图表并显示提示
+                const scoreChartContainer = document.getElementById('score-chart').parentNode;
+                scoreChartContainer.innerHTML = '<div class="h-full flex items-center justify-center text-gray-500">未启用总分均衡选项，无相关数据</div>';
+                window.scoreChart = null;
+            }
+        }
+        
+        // 生成班级统计表格
+        function generateClassStatsTable() {
+            const tableBody = document.getElementById('class-stats-body');
+            tableBody.innerHTML = '';
+            
+            classData.forEach(cls => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-200 hover:bg-gray-50';
+                
+                const totalStudents = cls.students.length;
+                const genderRatio = totalStudents > 0 
+                    ? `${cls.stats.male}:${cls.stats.female}` 
+                    : '0:0';
+                const avgTotalScore = totalStudents > 0 && cls.stats.totalScore
+                    ? (cls.stats.totalScore / totalStudents).toFixed(1)
+                    : '-';
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-4">${cls.name}</td>
+                    <td class="py-3 px-4 text-center">${totalStudents}</td>
+                    <td class="py-3 px-4 text-center">${cls.stats.male}</td>
+                    <td class="py-3 px-4 text-center">${cls.stats.female}</td>
+                    <td class="py-3 px-4 text-center">${genderRatio}</td>
+                    <td class="py-3 px-4 text-center">${avgTotalScore}</td>
+                `;
+                
+                // 添加学科平均分（始终显示）
+                selectedSubjects.forEach(subject => {
+                    const avgSubjectScore = totalStudents > 0 && cls.stats.subjectScores[subject]
+                        ? (cls.stats.subjectScores[subject] / totalStudents).toFixed(1)
+                        : '-';
+                    
+                    const td = document.createElement('td');
+                    td.className = 'py-3 px-4 text-center';
+                    td.textContent = avgSubjectScore;
+                    tr.appendChild(td);
+                });
+                
+                tableBody.appendChild(tr);
+            });
+            
+            // 添加学科表头（始终显示）
+            const headerRow = tableBody.parentNode.querySelector('thead tr');
+            
+            // 移除已有的学科表头
+            while (headerRow.children.length > 6) {
+                headerRow.removeChild(headerRow.lastChild);
+            }
+            
+            // 添加新的学科表头
+            selectedSubjects.forEach(subject => {
+                const th = document.createElement('th');
+                th.className = 'py-3 px-4 text-center';
+                th.textContent = subject; // 直接使用学科名称，不加"平均分"
+                headerRow.appendChild(th);
+            });
+        }
+        
+        // 更新结果表格（包含搜索功能）
+        function updateResultTable() {
+            const tableBody = document.getElementById('classification-result-body');
+            const filterValue = document.getElementById('class-filter').value;
+            const searchTerm = document.getElementById('student-search').value.toLowerCase().trim();
+            
+            tableBody.innerHTML = '';
+            
+            let allStudents = [];
+            classData.forEach(cls => {
+                cls.students.forEach(student => {
+                    allStudents.push({...student, className: cls.name});
+                });
+            });
+            
+            // 根据筛选条件和搜索词过滤学生
+            let filteredStudents = allStudents;
+            
+            // 应用班级筛选
+            if (filterValue !== 'all') {
+                filteredStudents = filteredStudents.filter(student => student.className === filterValue);
+            }
+            
+            // 应用搜索过滤
+            if (searchTerm) {
+                filteredStudents = filteredStudents.filter(student => {
+                    // 搜索姓名
+                    if (student.姓名.toLowerCase().includes(searchTerm)) {
+                        return true;
+                    }
+                    // 可以根据需要添加更多搜索字段
+                    return false;
+                });
+            }
+            
+            // 按班级排序，同一班级内按总分从高到低排序
+            filteredStudents.sort((a, b) => {
+                if (a.className !== b.className) {
+                    const aNum = extractClassNumber(a.className);
+                    const bNum = extractClassNumber(b.className);
+                    return aNum - bNum;
+                }
+                // 按总分从高到低排序
+                const scoreA = parseFloat(a.总分 || 0);
+                const scoreB = parseFloat(b.总分 || 0);
+                if (scoreA !== scoreB) {
+                    return scoreB - scoreA;
+                }
+                // 总分相同时按姓名排序
+                return a.姓名.localeCompare(b.姓名);
+            });
+            
+            // 生成表格行
+            filteredStudents.forEach((student, index) => {
+                const tr = document.createElement('tr');
+                tr.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+                
+                // 构建成绩单元格
+                let scoreCells = '';
+                subjectList.forEach(subject => {
+                    scoreCells += `<td class="py-3 px-4 border-t border-gray-200 text-center">${student[subject] || '-'}</td>`;
+                });
+                
+                // 原班级单元格（仅重调班）
+                const originalClassCell = currentMode === 'adjust' 
+                    ? `<td class="py-3 px-4 border-t border-gray-200 text-center">${student['原班级'] || '-'}</td>` 
+                    : '';
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-4 border-t border-gray-200">${index + 1}</td>
+                    <td class="py-3 px-4 border-t border-gray-200">
+                        <span class="text-primary cursor-pointer hover:underline student-name" 
+                              data-name="${student.姓名}" 
+                              data-class="${student.className}">${student.姓名}</span>
+                    </td>
+                    <td class="py-3 px-4 border-t border-gray-200 text-center">${student.性别 || '-'}</td>
+                    <td class="py-3 px-4 border-t border-gray-200 text-center">${student.className}</td>
+                    ${originalClassCell}
+                    ${scoreCells}
+                    <td class="py-3 px-4 border-t border-gray-200 text-center">${student.总分 || '-'}</td>
+                `;
+                
+                tableBody.appendChild(tr);
+            });
+            
+            // 为学生姓名添加点击事件（打开调整窗口）
+            document.querySelectorAll('.student-name').forEach(elem => {
+                elem.addEventListener('click', () => {
+                    const studentName = elem.getAttribute('data-name');
+                    const studentClass = elem.getAttribute('data-class');
+                    openAdjustModal(studentName, studentClass);
+                });
+            });
+        }
+        
+        // 打开调整弹窗
+        function openAdjustModal(studentName, studentClass) {
+            // 找到学生信息
+            let student = null;
+            let sourceClassIndex = -1;
+            
+            classData.forEach((cls, index) => {
+                if (cls.name === studentClass) {
+                    sourceClassIndex = index;
+                    const found = cls.students.find(s => s.姓名 === studentName);
+                    if (found) student = found;
+                }
+            });
+            
+            if (!student) return;
+            
+            // 更新弹窗标题
+            document.getElementById('adjust-modal-title').textContent = `调整 ${student.姓名} 的班级（当前：${studentClass}）`;
+            
+            // 显示学生信息
+            const studentInfoContainer = document.getElementById('student-info');
+            
+            // 构建学生信息HTML
+            let studentInfoHtml = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <span class="text-gray-500">姓名：</span>
+                        <span class="font-medium">${student.姓名}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">性别：</span>
+                        <span class="font-medium">${student.性别 || '-'}</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">当前班级：</span>
+                        <span class="font-medium">${studentClass}</span>
+                    </div>
+            `;
+            
+            // 添加原班级信息（仅重调班）
+            if (currentMode === 'adjust') {
+                studentInfoHtml += `
+                    <div>
+                        <span class="text-gray-500">原班级：</span>
+                        <span class="font-medium">${student['原班级'] || '-'}</span>
+                    </div>
+                `;
+            }
+            
+            // 添加总分信息
+            if (student.总分) {
+                studentInfoHtml += `
+                    <div>
+                        <span class="text-gray-500">总分：</span>
+                        <span class="font-medium">${student.总分}</span>
+                    </div>
+                `;
+            }
+            
+            studentInfoHtml += `</div>`;
+            
+            // 添加学科成绩
+            if (subjectList.length > 0) {
+                studentInfoHtml += `<div class="mt-3">
+                    <span class="text-gray-500 block mb-1">学科成绩：</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                `;
+                
+                subjectList.forEach(subject => {
+                    if (student[subject]) {
+                        studentInfoHtml += `
+                            <div>
+                                <span class="text-sm">${subject}：</span>
+                                <span class="text-sm font-medium">${student[subject]}</span>
+                            </div>
+                        `;
+                    }
+                });
+                
+                studentInfoHtml += `</div></div>`;
+            }
+            
+            studentInfoContainer.innerHTML = studentInfoHtml;
+            
+            // 生成推荐学生列表
+            const recommendedContainer = document.getElementById('recommended-students');
+            recommendedContainer.innerHTML = '';
+            
+            classData.forEach((targetClass, targetIndex) => {
+                if (targetClass.name === studentClass) return; // 跳过当前班级
+                
+                // 为每个班级找到2个匹配度最高的学生
+                const matchedStudents = findMatchingStudents(student, targetClass.students, 2);
+                
+                if (matchedStudents.length > 0) {
+                    const classSection = document.createElement('div');
+                    classSection.className = 'mb-4';
+                    classSection.innerHTML = `<h5 class="font-medium text-gray-700 mb-2">${targetClass.name} 推荐学生：</h5>`;
+                    
+                    const studentsList = document.createElement('div');
+                    studentsList.className = 'space-y-2';
+                    
+                    matchedStudents.forEach(match => {
+                        const studentItem = document.createElement('div');
+                        studentItem.className = 'p-3 bg-gray-50 rounded-lg flex justify-between items-center';
+                        
+                        // 匹配度用百分比表示
+                        let matchInfo = `${match.student.姓名}（${match.student.性别}`;
+                        if (match.student.总分) {
+                            matchInfo += `，总分：${match.student.总分}，匹配度：${Math.round(match.score)}%`;
+                        }
+                        matchInfo += '）';
+                        
+                        studentItem.innerHTML = `
+                            <span>${matchInfo}</span>
+                            <button class="swap-student-btn bg-primary hover:bg-primary/90 text-white px-3 py-1 rounded text-sm"
+                                    data-source-class="${sourceClassIndex}"
+                                    data-target-class="${targetIndex}"
+                                    data-source-name="${student.姓名}"
+                                    data-target-name="${match.student.姓名}">
+                                调换
+                            </button>
+                        `;
+                        
+                        studentsList.appendChild(studentItem);
+                    });
+                    
+                    classSection.appendChild(studentsList);
+                    recommendedContainer.appendChild(classSection);
+                }
+            });
+            
+            // 为调换按钮添加事件监听
+            document.querySelectorAll('.swap-student-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const sourceClassIndex = parseInt(e.target.getAttribute('data-source-class'));
+                    const targetClassIndex = parseInt(e.target.getAttribute('data-target-class'));
+                    const sourceName = e.target.getAttribute('data-source-name');
+                    const targetName = e.target.getAttribute('data-target-name');
+                    
+                    swapStudents(sourceClassIndex, targetClassIndex, sourceName, targetName);
+                    document.getElementById('adjust-modal').classList.add('hidden');
+                    
+                    // 重新计算班级统计信息
+                    recalculateClassStats();
+                    
+                    // 更新结果显示
+                    generateCharts();
+                    generateClassStatsTable();
+                    updateResultTable();
+                    
+                    showToast('学生调换成功', 'success');
+                });
+            });
+            
+            // 更新目标班级下拉框
+            const targetClassSelect = document.getElementById('target-class');
+            targetClassSelect.innerHTML = '';
+            
+            classData.forEach((cls, index) => {
+                if (cls.name !== studentClass) {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = cls.name;
+                    targetClassSelect.appendChild(option);
+                }
+            });
+            
+            // 重置目标学生下拉框
+            document.getElementById('target-student').innerHTML = '<option value="">请先选择班级</option>';
+            document.getElementById('force-swap').disabled = true;
+            
+            // 保存当前学生信息到弹窗元素
+            document.getElementById('adjust-modal').setAttribute('data-source-class', sourceClassIndex);
+            document.getElementById('adjust-modal').setAttribute('data-source-name', studentName);
+            
+            // 显示弹窗
+            document.getElementById('adjust-modal').classList.remove('hidden');
+        }
+        
+        // 找到匹配度最高的学生（返回百分比）
+        function findMatchingStudents(sourceStudent, targetStudents, count) {
+            // 计算每个目标学生与源学生的匹配度
+            const matches = targetStudents.map(student => {
+                let score = 0;
+                
+                // 性别匹配度
+                if (balanceOptions.gender && sourceStudent.性别 && student.性别) {
+                    score += sourceStudent.性别 === student.性别 ? 20 : 0;
+                }
+                
+                // 总分匹配度（分数越接近，得分越高）
+                if (balanceOptions.score && sourceStudent.总分 && student.总分) {
+                    const maxDiff = 50; // 最大分数差，超过此值匹配度为0
+                    const scoreDiff = Math.abs(parseFloat(sourceStudent.总分) - parseFloat(student.总分));
+                    const normalizedScore = Math.max(0, 1 - scoreDiff / maxDiff) * 50; // 0-50分
+                    score += normalizedScore;
+                }
+                
+                // 学科匹配度
+                if (balanceOptions.subjects) {
+                    const maxSubjects = Math.min(selectedSubjects.length, 3); // 最多考虑3个学科
+                    const subjectWeight = 30 / maxSubjects; // 总30分，按学科数量分配
+                    
+                    selectedSubjects.slice(0, maxSubjects).forEach(subject => {
+                        if (sourceStudent[subject] && student[subject]) {
+                            const maxSubjectDiff = 30; // 单科最大分数差
+                            const subjectDiff = Math.abs(parseFloat(sourceStudent[subject]) - parseFloat(student[subject]));
+                            const normalizedSubjectScore = Math.max(0, 1 - subjectDiff / maxSubjectDiff) * subjectWeight;
+                            score += normalizedSubjectScore;
+                        }
+                    });
+                }
+                
+                // 确保分数在0-100之间，作为百分比
+                return { student, score: Math.min(100, Math.max(0, score)) };
+            });
+            
+            // 按匹配度排序并取前count名
+            return matches.sort((a, b) => b.score - a.score).slice(0, count);
+        }
+        
+        // 更新目标学生下拉框
+        function updateTargetStudents() {
+            const targetClassIndex = document.getElementById('target-class').value;
+            const genderFilter = document.getElementById('gender-filter').value;
+            const targetStudentSelect = document.getElementById('target-student');
+
+            if (!targetClassIndex) {
+                targetStudentSelect.innerHTML = '<option value="">请先选择班级</option>';
+                document.getElementById('force-swap').disabled = true;
+                return;
+            }
+
+            const targetClass = classData[targetClassIndex];
+            targetStudentSelect.innerHTML = '<option value="">请选择学生</option>';
+
+            // 筛选并排序学生
+            let filteredStudents = targetClass.students;
+
+            // 应用性别筛选
+            if (genderFilter !== 'all') {
+                filteredStudents = filteredStudents.filter(student => student.性别 === genderFilter);
+            }
+
+            // 按总分从高到低排序
+            filteredStudents.sort((a, b) => {
+                const scoreA = parseFloat(a.总分 || 0);
+                const scoreB = parseFloat(b.总分 || 0);
+                return scoreB - scoreA;
+            });
+
+            // 添加到下拉框
+            filteredStudents.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.姓名;
+                option.textContent = `${student.姓名} (总分: ${student.总分 || '-'})`;
+                targetStudentSelect.appendChild(option);
+            });
+
+            // 为目标学生选择添加事件监听
+            targetStudentSelect.addEventListener('change', () => {
+                document.getElementById('force-swap').disabled = !targetStudentSelect.value;
+            });
+        }
+
+        // 为性别筛选添加事件监听
+        document.getElementById('gender-filter').addEventListener('change', updateTargetStudents);
+        
+        // 为目标班级选择添加事件监听
+        document.getElementById('target-class').addEventListener('change', updateTargetStudents);
+        
+        // 为强制调换按钮添加事件监听
+        document.getElementById('force-swap').addEventListener('click', forceSwapStudents);
+        
+        // 强制调换学生
+        function forceSwapStudents() {
+            const sourceClassIndex = parseInt(document.getElementById('adjust-modal').getAttribute('data-source-class'));
+            const sourceName = document.getElementById('adjust-modal').getAttribute('data-source-name');
+            const targetClassIndex = parseInt(document.getElementById('target-class').value);
+            const targetName = document.getElementById('target-student').value;
+
+            if (isNaN(sourceClassIndex) || isNaN(targetClassIndex) || !targetName) {return;}
+            if (sourceClassIndex === targetClassIndex) {showToast('不能将学生调换到同一班级', 'warning'); return;}
+
+            swapStudents(sourceClassIndex, targetClassIndex, sourceName, targetName);
+            document.getElementById('adjust-modal').classList.add('hidden');
+
+            // 重新计算班级统计信息
+            recalculateClassStats();
+            
+            // 更新结果显示
+            generateCharts();
+            generateClassStatsTable();
+            updateResultTable();
+
+            showToast('学生强制调换成功', 'success');
+        }
+
+        // 从班级中移除学生
+        function removeStudentFromClass(student, classData, classIndex) {
+            const cls = classData[classIndex];
+            const studentIndex = cls.students.findIndex(s => s.姓名 === student.姓名);
+            if (studentIndex !== -1) {
+                cls.students.splice(studentIndex, 1);
+            }
+        }
+
+        // 将学生分配到班级
+        function assignStudentToClass(student, classData, classIndex) {
+            classData[classIndex].students.push(student);
+        }
+        
+        // 调换两个班级的学生
+        function swapStudents(sourceClassIndex, targetClassIndex, sourceName, targetName) {
+            const sourceClass = classData[sourceClassIndex];
+            const targetClass = classData[targetClassIndex];
+            
+            // 找到要交换的学生
+            const sourceStudent = sourceClass.students.find(s => s.姓名 === sourceName);
+            const targetStudent = targetClass.students.find(s => s.姓名 === targetName);
+            
+            if (!sourceStudent || !targetStudent) return;
+            
+            // 记录调整前的信息（用于历史记录）
+            const sourceBeforeClass = sourceStudent.newClass;
+            const targetBeforeClass = targetStudent.newClass;
+            
+            // 从原班级移除
+            removeStudentFromClass(sourceStudent, classData, sourceClassIndex);
+            removeStudentFromClass(targetStudent, classData, targetClassIndex);
+            
+            // 添加到新班级
+            assignStudentToClass(sourceStudent, classData, targetClassIndex);
+            assignStudentToClass(targetStudent, classData, sourceClassIndex);
+            
+            // 更新学生的新班级信息
+            sourceStudent.newClass = targetClass.name;
+            targetStudent.newClass = sourceClass.name;
+            
+            // 记录调整历史
+            const now = new Date();
+            const timeStr = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+            
+            adjustmentHistory.push({
+                time: timeStr,
+                student1: sourceStudent.姓名,
+                fromClass1: sourceBeforeClass,
+                toClass1: targetClass.name,
+                student2: targetStudent.姓名,
+                fromClass2: targetBeforeClass,
+                toClass2: sourceClass.name
+            });
+        }
+        
+        // 重新分班
+        function reclassifyAll() {
+            if (confirm('确定要重新分班吗？当前的调整将会被重置。')) {
+                startClassification();
+                showToast('已重新分班', 'success');
+            }
+        }
+        
+        // 按总分重新调整
+        function rebalanceScore() {
+            // 保存当前的均衡选项
+            const originalBalanceOptions = {...balanceOptions};
+            
+            // 临时调整均衡选项，优先考虑总分均衡
+            balanceOptions = {
+                gender: false,
+                score: true,
+                subjects: false
+            };
+            
+            // 执行微调
+            fineTuneClasses(classData);
+            
+            // 恢复原始均衡选项
+            balanceOptions = originalBalanceOptions;
+            
+            // 更新结果显示
+            generateCharts();
+            generateClassStatsTable();
+            updateResultTable();
+            
+            showToast('已按总分重新调整', 'success');
+        }
+        
+        // 按性别重新调整
+        function rebalanceGender() {
+            // 保存当前的均衡选项
+            const originalBalanceOptions = {...balanceOptions};
+            
+            // 临时调整均衡选项，优先考虑性别均衡
+            balanceOptions = {
+                gender: true,
+                score: false,
+                subjects: false
+            };
+            
+            // 执行微调
+            fineTuneClasses(classData);
+            
+            // 恢复原始均衡选项
+            balanceOptions = originalBalanceOptions;
+            
+            // 更新结果显示
+            generateCharts();
+            generateClassStatsTable();
+            updateResultTable();
+            
+            showToast('已按性别重新调整', 'success');
+        }
+        
+        // 保存数据到本地存储
+        function saveData() {
+            try {
+                // 只保留当前方案
+                if (window.allAssignmentPlans && window.allAssignmentPlans.length > 0) {
+                    const currentPlan = window.allAssignmentPlans[currentPlanIndex];
+                    // 保存当前方案的名称
+                    const currentPlanName = currentPlan.name || document.getElementById('plan-select').options[currentPlanIndex].text;
+                    window.allAssignmentPlans = [currentPlan];
+                    allAssignmentPlans = [currentPlan];
+                    currentPlanIndex = 0;
+                    // 确保方案名称保持不变
+                    if (allAssignmentPlans[0]) {
+                        allAssignmentPlans[0].name = currentPlanName;
+                    }
+                    // 更新方案选择下拉框
+                    updatePlanSelect();
+                }
+                
+                const saveData = {
+                    mode: currentMode,
+                    students: studentData,
+                    classes: classData,
+                    settings: {
+                        classCount,
+                        balanceOptions,
+                        subjectList,
+                        selectedSubjects,
+                        classNaming,
+                        classPrefix
+                    },
+                    adjustmentHistory
+                };
+                
+                localStorage.setItem('classSystemData', JSON.stringify(saveData));
+                showToast('此方案已保存，其他方案已清除', 'success');
+            } catch (error) {
+                showToast('数据保存失败', 'error');
+                console.error('数据保存失败:', error);
+            }
+        }
+        
+        // 备份数据
+        function backupData() {
+            try {
+                const backupData = {
+                    mode: currentMode,
+                    students: studentData,
+                    classes: classData,
+                    settings: {
+                        classCount,
+                        balanceOptions,
+                        subjectList,
+                        selectedSubjects,
+                        classNaming,
+                        classPrefix
+                    },
+                    adjustmentHistory,
+                    backupTime: new Date().toISOString()
+                };
+                
+                const dataStr = JSON.stringify(backupData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                saveAs(dataBlob, `分班数据备份_${new Date().toLocaleDateString().replace(/\//g, '-')}.json`);
+                
+                showToast('数据备份成功', 'success');
+            } catch (error) {
+                showToast('数据备份失败', 'error');
+                console.error('数据备份失败:', error);
+            }
+        }
+        
+        // 优化后的导出结果函数
+        function exportResult() {
+            try {
+                // 检查是否有数据可导出
+                if (!classData || classData.length === 0 || 
+                    (classData.length > 0 && classData[0].students.length === 0)) {
+                    showToast('没有可导出的分班结果数据', 'warning');
+                    return;
+                }
+                
+                // 创建数据副本，避免导出过程中数据被修改
+                const classDataCopy = JSON.parse(JSON.stringify(classData));
+                
+                // 创建工作簿
+                const wb = XLSX.utils.book_new();
+                
+                // 1. 年级总表 - 按班级1到最大班排列，学生按总分从高到低排序
+                let allStudents = [];
+                classDataCopy.forEach(cls => {
+                    cls.students.forEach(student => {
+                        // 验证并清理学生数据
+                        const cleanStudent = {};
+                        
+                        // 基础信息
+                        cleanStudent['序号'] = '';
+                        cleanStudent['姓名'] = student.姓名 ? String(student.姓名).replace(/[^\w\u4e00-\u9fa5]/g, '') : '';
+                        cleanStudent['性别'] = student.性别 || '';
+                        cleanStudent['新班级'] = cls.name;
+                        
+                        // 提取班级数字用于排序
+                        cleanStudent['classNumber'] = extractClassNumber(cls.name);
+                        
+                        // 重调班信息
+                        if (currentMode === 'adjust') {
+                            cleanStudent['原班级'] = student['原班级'] || '';
+                            cleanStudent['原学号'] = student['原学号'] || '';
+                        }
+                        
+                        // 总分（确保是数字）
+                        cleanStudent['总分'] = student.总分 ? parseFloat(student.总分) : 0;
+                        
+                        // 学科成绩（确保是数字）
+                        subjectList.forEach(subject => {
+                            if (student[subject]) {
+                                cleanStudent[subject] = parseFloat(student[subject]) || '';
+                            }
+                        });
+                        
+                        allStudents.push(cleanStudent);
+                    });
+                });
+                
+                // 按班级和总分排序
+                allStudents.sort((a, b) => {
+                    // 先按班级数字排序
+                    if (a.classNumber !== b.classNumber) {
+                        return a.classNumber - b.classNumber;
+                    }
+                    // 再按总分从高到低排序
+                    return b.总分 - a.总分;
+                });
+                
+                // 添加序号
+                allStudents.forEach((student, index) => {
+                    student['序号'] = index + 1;
+                    // 移除用于排序的临时字段
+                    delete student['classNumber'];
+                });
+                
+                // 创建年级总表
+                try {
+                    const gradeSheet = XLSX.utils.json_to_sheet(allStudents);
+                    XLSX.utils.book_append_sheet(wb, gradeSheet, '年级总表');
+                } catch (error) {
+                    console.error('创建年级总表失败:', error);
+                    showToast('创建年级总表失败: ' + error.message, 'error');
+                    return;
+                }
+                
+                // 2. 各班子表 - 学生按总分从高到低排序
+                try {
+                    classDataCopy.forEach(cls => {
+                        let classStudents = cls.students.map((student) => {
+                            const cleanStudent = {
+                                '序号': '',
+                                '姓名': student.姓名 ? String(student.姓名).replace(/[^\w\u4e00-\u9fa5]/g, '') : '',
+                                '性别': student.性别 || ''
+                            };
+                            
+                            if (currentMode === 'adjust') {
+                                cleanStudent['原班级'] = student['原班级'] || '';
+                                cleanStudent['原学号'] = student['原学号'] || '';
+                            }
+                            
+                            cleanStudent['总分'] = student.总分 ? parseFloat(student.总分) : 0;
+                            
+                            subjectList.forEach(subject => {
+                                if (student[subject]) {
+                                    cleanStudent[subject] = parseFloat(student[subject]) || '';
+                                }
+                            });
+                            
+                            return cleanStudent;
+                        });
+                        
+                        // 按总分从高到低排序
+                        classStudents.sort((a, b) => b.总分 - a.总分);
+                        
+                        // 添加序号
+                        classStudents.forEach((student, index) => {
+                            student['序号'] = index + 1;
+                        });
+                        
+                        const classSheet = XLSX.utils.json_to_sheet(classStudents);
+                        XLSX.utils.book_append_sheet(wb, classSheet, cls.name);
+                    });
+                } catch (error) {
+                    console.error('创建子表失败:', error);
+                    showToast('创建班级子表失败: ' + error.message, 'error');
+                    return;
+                }
+                
+                // 3. 班级统计信息一览表
+                try {
+                    const statsData = [];
+                    classDataCopy.forEach(cls => {
+                        // 计算班级统计信息
+                        const totalStudents = cls.students.length;
+                        const boysCount = cls.students.filter(s => s.性别 === '男').length;
+                        const girlsCount = totalStudents - boysCount;
+                        const genderRatio = totalStudents > 0 ? `${boysCount}:${girlsCount}` : '0:0';
+                        
+                        // 计算总分平均分
+                        let totalScore = 0;
+                        cls.students.forEach(s => {
+                            if (s.总分) {
+                                totalScore += parseFloat(s.总分);
+                            }
+                        });
+                        const avgScore = totalStudents > 0 ? (totalScore / totalStudents).toFixed(2) : '0';
+                        
+                        // 创建统计对象
+                        const statItem = {
+                            '班级': cls.name,
+                            '总人数': totalStudents,
+                            '男生': boysCount,
+                            '女生': girlsCount,
+                            '性别比例': genderRatio,
+                            '总分平均分': avgScore
+                        };
+                        
+                        // 添加学科平均分
+                        subjectList.forEach(subject => {
+                            let subjectTotal = 0;
+                            let subjectCount = 0;
+                            cls.students.forEach(s => {
+                                if (s[subject]) {
+                                    subjectTotal += parseFloat(s[subject]);
+                                    subjectCount++;
+                                }
+                            });
+                            const subjectAvg = subjectCount > 0 ? (subjectTotal / subjectCount).toFixed(2) : '0';
+                            statItem[`${subject}平均分`] = subjectAvg;
+                        });
+                        
+                        statsData.push(statItem);
+                    });
+                    
+                    // 按班级排序
+                    statsData.sort((a, b) => {
+                        const aNum = extractClassNumber(a.班级);
+                        const bNum = extractClassNumber(b.班级);
+                        return aNum - bNum;
+                    });
+                    
+                    const statsSheet = XLSX.utils.json_to_sheet(statsData);
+                    XLSX.utils.book_append_sheet(wb, statsSheet, '班级统计信息');
+                } catch (error) {
+                    console.error('创建统计信息表失败:', error);
+                    showToast('创建统计信息表失败: ' + error.message, 'error');
+                    return;
+                }
+                
+                // 4. 手动调班历史记录
+                try {
+                    let historyData;
+                    if (adjustmentHistory && adjustmentHistory.length > 0) {
+                        historyData = adjustmentHistory.map((item, index) => {
+                            return {
+                                '序号': index + 1,
+                                '时间': item.time,
+                                '学生1': item.student1,
+                                '原班级1': item.fromClass1,
+                                '新班级1': item.toClass1,
+                                '学生2': item.student2,
+                                '原班级2': item.fromClass2,
+                                '新班级2': item.toClass2
+                            };
+                        });
+                    } else {
+                        // 如果没有调班记录，创建一个包含提示信息的表格
+                        historyData = [{
+                            '提示': '暂无调班历史记录'
+                        }];
+                    }
+
+                    const historySheet = XLSX.utils.json_to_sheet(historyData);
+                    XLSX.utils.book_append_sheet(wb, historySheet, '调班历史记录');
+                } catch (error) {
+                    console.error('创建调班历史表失败:', error);
+                    showToast('创建调班历史表失败: ' + error.message, 'error');
+                    return;
+                }
+                
+                // 生成并下载文件
+                try {
+                    const fileName = `分班结果_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    showToast('结果导出成功', 'success');
+                } catch (error) {
+                    console.error('写入文件失败:', error);
+                    
+                    // 尝试备用导出方法
+                    try {
+                        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                        saveAs(new Blob([wbout], { type: 'application/octet-stream' }), fileName);
+                        showToast('结果导出成功', 'success');
+                    } catch (backupError) {
+                        console.error('备用导出方法失败:', backupError);
+                        showToast('导出失败: ' + backupError.message, 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('导出过程总错误:', error);
+                showToast('导出过程出错: ' + error.message, 'error');
+            }
+        }
+        
+        // 文件保存辅助函数
+        function saveAs(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
+        }
+        
+        // 显示提示消息
+        function showToast(message, type = 'info', autoHide = true) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toast-icon');
+            const toastMessage = document.getElementById('toast-message');
+
+            // 清除之前的定时器
+            if (window.toastTimer) {
+                clearTimeout(window.toastTimer);
+                window.toastTimer = null;
+            }
+
+            // 设置图标
+            toastIcon.className = '';
+            switch (type) {
+                case 'success':
+                    toastIcon.className = 'fa fa-check-circle mr-2 text-secondary';
+                    break;
+                case 'error':
+                    toastIcon.className = 'fa fa-exclamation-circle mr-2 text-danger';
+                    break;
+                case 'warning':
+                    toastIcon.className = 'fa fa-exclamation-triangle mr-2 text-warning';
+                    break;
+                default:
+                    toastIcon.className = 'fa fa-info-circle mr-2 text-info';
+            }
+
+            // 设置消息
+            toastMessage.textContent = message;
+
+            // 显示提示
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            // 如果需要自动隐藏
+            if (autoHide) {
+                window.toastTimer = setTimeout(() => {
+                    hideToast();
+                }, 3000);
+            }
+        }
+
+        // 隐藏提示消息
+        function hideToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-20', 'opacity-0');
+
+            // 清除定时器
+            if (window.toastTimer) {
+                clearTimeout(window.toastTimer);
+                window.toastTimer = null;
+            }
+        }
+        
+        // 从班级名称中提取数字，用于排序
+        function extractClassNumber(className) {
+            // 匹配中文数字或阿拉伯数字，支持'第X班'格式
+            const match = className.match(/第?([0-9一二三四五六七八九十百]+)班/);
+            if (!match) return 0;
+
+            const numStr = match[1];
+            // 处理中文数字
+            const chineseNums = {
+                '一':1, '二':2, '三':3, '四':4, '五':5, '六':6, '七':7, '八':8, '九':9, '十':10,
+                '十一':11, '十二':12, '十三':13, '十四':14, '十五':15, '十六':16, '十七':17, '十八':18, '十九':19, '二十':20
+            };
+
+            if (chineseNums[numStr]) {
+                return chineseNums[numStr];
+            } else {
+                return parseInt(numStr) || 0;
+            }
+        }
+        
+        // 初始化调班历史记录区域
+        function initAdjustmentHistoryArea() {
+            // 检查是否已存在历史记录区域
+            if (document.getElementById('adjustment-history-container')) {
+                return;
+            }
+            
+            const resultPage = document.getElementById('result-page');
+            if (!resultPage) return;
+            
+            // 创建历史记录区域
+            const historyContainer = document.createElement('div');
+            historyContainer.id = 'adjustment-history-container';
+            historyContainer.className = 'bg-white rounded-xl p-6 card-shadow mb-6';
+            
+            // 创建标题栏
+            const titleBar = document.createElement('div');
+            titleBar.className = 'flex justify-between items-center mb-4';
+            
+            const title = document.createElement('h3');
+            title.className = 'text-lg font-semibold';
+            title.textContent = '调班历史记录';
+            
+            const toggleBtn = document.createElement('button');
+            toggleBtn.id = 'toggle-history-btn';
+            toggleBtn.className = 'flex items-center text-primary hover:text-primary/80 transition-custom';
+            toggleBtn.innerHTML = '<i class="fa fa-chevron-down mr-1"></i> 展开';
+            toggleBtn.addEventListener('click', toggleHistoryVisibility);
+            
+            titleBar.appendChild(title);
+            titleBar.appendChild(toggleBtn);
+            
+            // 创建历史记录内容区域
+            const historyContent = document.createElement('div');
+            historyContent.id = 'history-content';
+            historyContent.className = 'hidden overflow-x-auto max-h-96';
+            
+            // 创建表格
+            const table = document.createElement('table');
+            table.className = 'min-w-full';
+            
+            // 创建表头
+            const thead = document.createElement('thead');
+            thead.className = 'bg-gray-100 text-gray-700';
+            thead.innerHTML = `
+                <tr>
+                    <th class="py-3 px-4 text-left">序号</th>
+                    <th class="py-3 px-4 text-left">时间</th>
+                    <th class="py-3 px-4 text-left">学生1</th>
+                    <th class="py-3 px-4 text-left">原班级</th>
+                    <th class="py-3 px-4 text-left">新班级</th>
+                    <th class="py-3 px-4 text-left">学生2</th>
+                    <th class="py-3 px-4 text-left">原班级</th>
+                    <th class="py-3 px-4 text-left">新班级</th>
+                </tr>
+            `;
+            
+            // 创建表体
+            const tbody = document.createElement('tbody');
+            tbody.id = 'history-body';
+            
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            historyContent.appendChild(table);
+            
+            historyContainer.appendChild(titleBar);
+            historyContainer.appendChild(historyContent);
+            
+            // 添加到结果页面底部
+            const resultSection = resultPage.querySelector('.mb-6:last-of-type');
+            if (resultSection) {
+                resultPage.insertBefore(historyContainer, resultSection.nextSibling);
+            } else {
+                resultPage.appendChild(historyContainer);
+            }
+        }
+        
+        // 切换历史记录显示/隐藏
+        function toggleHistoryVisibility() {
+            const content = document.getElementById('history-content');
+            const btn = document.getElementById('toggle-history-btn');
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                btn.innerHTML = '<i class="fa fa-chevron-up mr-1"></i> 收起';
+                updateHistoryTable();
+            } else {
+                content.classList.add('hidden');
+                btn.innerHTML = '<i class="fa fa-chevron-down mr-1"></i> 展开';
+            }
+        }
+        
+        // 更新历史记录表格
+        function updateHistoryTable() {
+            const tbody = document.getElementById('history-body');
+            if (!tbody) return;
+            
+            // 清空表格
+            tbody.innerHTML = '';
+            
+            if (!adjustmentHistory || adjustmentHistory.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="8" class="py-4 px-4 text-center text-gray-500">暂无调班历史记录</td>';
+                tbody.appendChild(row);
+                return;
+            }
+            
+            // 添加历史记录
+            adjustmentHistory.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.className = index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+                
+                row.innerHTML = `
+                    <td class="py-3 px-4">${index + 1}</td>
+                    <td class="py-3 px-4">${item.time}</td>
+                    <td class="py-3 px-4">${item.student1}</td>
+                    <td class="py-3 px-4">${item.fromClass1}</td>
+                    <td class="py-3 px-4 font-medium text-primary">${item.toClass1}</td>
+                    <td class="py-3 px-4">${item.student2}</td>
+                    <td class="py-3 px-4">${item.fromClass2}</td>
+                    <td class="py-3 px-4 font-medium text-primary">${item.toClass2}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // 在showResultPage函数中调用初始化历史记录区域
+        const originalShowResultPage = showResultPage;
+        showResultPage = function() {
+            originalShowResultPage();
+            initAdjustmentHistoryArea();
+        };
+        
+        // 初始化应用
+        function initApp() {
+            initEventListeners();
+            showHomePage();
+        }
+        
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+    <!-- 合并的分班逻辑.js -->
+    <script>
+// 分班系统核心逻辑模块
+const ClassAssignmentCore = (function() {
+    // 私有变量
+    let studentData = [];
+    let classCount = 6;
+    let classNamePrefix = "初一";
+    let assignmentResults = [];
+    let fieldInfo = {
+        idField: '',        // 序号/学号字段
+        nameField: '',      // 姓名字段
+        genderField: '',    // 性别字段
+        totalScoreField: '',// 总分字段
+        subjects: [],       // 确认的学科字段
+        nonScoreFields: []  // 非成绩字段
+    };
+    let transferHistory = [];  // 记录手动调整历史
+
+    // 公共方法
+    return {
+        // 初始化数据
+        init: function(data) {
+            studentData = data || [];
+            assignmentResults = [];
+            transferHistory = [];
+            return this;
+        },
+
+        // 设置字段信息
+        setFieldInfo: function(info) {
+            fieldInfo = { ...fieldInfo, ...info };
+            return this;
+        },
+
+        // 设置班级数量
+        setClassCount: function(count) {
+            classCount = count;
+            return this;
+        },
+
+        // 设置班级名称前缀
+        setClassNamePrefix: function(prefix) {
+            classNamePrefix = prefix;
+            return this;
+        },
+
+        // 执行分班算法
+        performClassAssignment: function(balanceOptions = {}) {
+            const { balanceGender = true, balanceTotal = true } = balanceOptions;
+            
+            if (studentData.length === 0) {
+                throw new Error("没有可分班的学生数据");
+            }
+
+            // 复制学生数据避免修改原始数据
+            let students = [].concat(studentData);
+            
+            // 计算综合得分用于排序
+            students.forEach(student => {
+                let totalScore = 0;
+                let subjectCount = 0;
+                
+                fieldInfo.subjects.forEach(subject => {
+                    if (subject === fieldInfo.totalScoreField) return;
+                    
+                    totalScore += parseFloat(this.getFieldValue(student, subject)) || 0;
+                    subjectCount++;
+                });
+                
+                student.compositeScore = subjectCount > 0 ? totalScore / subjectCount : 0;
+            });
+            
+            // 按综合得分降序排序
+            students.sort((a, b) => b.compositeScore - a.compositeScore);
+            
+            assignmentResults = [];
+            const baseClassSize = Math.floor(students.length / classCount);
+            const remainder = students.length % classCount;
+            
+            // 初始化班级
+            for (let i = 0; i < classCount; i++) {
+                const classSize = baseClassSize + (i < remainder ? 1 : 0);
+                const className = classNamePrefix + (i + 1) + '班';
+                
+                assignmentResults.push({
+                    className: className,
+                    shortClassName: (i+1) + '班',
+                    students: [],
+                    targetSize: classSize,
+                    maleCount: 0,
+                    femaleCount: 0,
+                    totalScoreTotal: 0,
+                    totalScoreAvg: 0,
+                    compositeScoreAvg: 0
+                });
+                
+                // 初始化各学科总分和平均分
+                fieldInfo.subjects.forEach(subject => {
+                    assignmentResults[i][subject + 'Total'] = 0;
+                    assignmentResults[i][subject + 'Avg'] = 0;
+                });
+            }
+            
+            // 蛇形分配学生
+            this.snakeAssignStudents(students);
+            
+            // 更新班级统计信息
+            assignmentResults.forEach(cls => this.updateClassScoreStats(cls));
+            
+            // 如果需要按性别均衡，进行调整
+            if (balanceGender) {
+                for (let iter = 0; iter < 30; iter++) {
+                    this.adjustGenderBalance();
+                }
+            }
+            
+            // 如果需要按总分均衡，进行调整
+            if (balanceTotal) {
+                for (let iter = 0; iter < 30; iter++) {
+                    this.adjustScoreBalance('totalScoreAvg', fieldInfo.totalScoreField);
+                }
+            }
+            
+            return assignmentResults;
+        },
+
+        // 蛇形分配学生
+        snakeAssignStudents: function(students) {
+            let direction = 1; // 1表示正向，-1表示反向
+            
+            for (let i = 0; i < students.length; i++) {
+                let classIndex;
+                
+                if (direction === 1) {
+                    classIndex = i % classCount;
+                } else {
+                    classIndex = (classCount - 1) - (i % classCount);
+                }
+                
+                // 每分配完一轮班级后改变方向
+                if ((i + 1) % classCount === 0) {
+                    direction *= -1;
+                }
+                
+                const student = students[i];
+                assignmentResults[classIndex].students.push(student);
+                
+                // 更新性别统计
+                if (this.getGender(student) === 'male') {
+                    assignmentResults[classIndex].maleCount++;
+                } else {
+                    assignmentResults[classIndex].femaleCount++;
+                }
+            }
+        },
+
+        // 调整性别平衡
+        adjustGenderBalance: function() {
+            let totalMale = 0;
+            let totalFemale = 0;
+            
+            assignmentResults.forEach(cls => {
+                totalMale += cls.maleCount;
+                totalFemale += cls.femaleCount;
+            });
+            
+            const totalStudents = totalMale + totalFemale;
+            if (totalStudents === 0) return;
+            
+            for (let j = 0; j < classCount; j++) {
+                const currentClass = assignmentResults[j];
+                const classSize = currentClass.students.length;
+                
+                // 计算理想的男女生比例
+                const idealMale = Math.round(classSize * totalMale / totalStudents);
+                const maleDiff = currentClass.maleCount - idealMale;
+                
+                // 如果差异不大，则不调整
+                if (Math.abs(maleDiff) <= 1) continue;
+                
+                const needMoreMale = maleDiff < 0;
+                
+                // 寻找可以交换的班级
+                for (let k = 0; k < classCount; k++) {
+                    if (j === k) continue;
+                    
+                    const targetClass = assignmentResults[k];
+                    const targetClassSize = targetClass.students.length;
+                    const targetIdealMale = Math.round(targetClassSize * totalMale / totalStudents);
+                    const targetMaleDiff = targetClass.maleCount - targetIdealMale;
+                    
+                    // 找到性别比例互补的班级
+                    if ((needMoreMale && targetMaleDiff > 0) ||
+                        (!needMoreMale && targetMaleDiff < 0)) {
+                        
+                        // 寻找最佳交换学生
+                        const bestSwap = this.findBestStudentSwapByGender(
+                            currentClass, targetClass, needMoreMale);
+                        
+                        if (bestSwap) {
+                            this.swapStudents(currentClass, targetClass, 
+                                bestSwap.currentIndex, bestSwap.targetIndex);
+                            break;
+                        }
+                    }
+                }
+            }
+        },
+        
+        // 寻找最佳的性别交换学生
+        findBestStudentSwapByGender: function(classA, classB, needMoreMale) {
+            let bestScoreDiff = Infinity;
+            let bestCurrentIndex = -1;
+            let bestTargetIndex = -1;
+            
+            for (let i = 0; i < classA.students.length; i++) {
+                const studentA = classA.students[i];
+                const genderA = this.getGender(studentA);
+                
+                // 如果需要更多男生，则筛选出女生进行交换
+                if ((needMoreMale && genderA === 'male') || 
+                    (!needMoreMale && genderA === 'female')) {
+                    continue;
+                }
+                
+                for (let j = 0; j < classB.students.length; j++) {
+                    const studentB = classB.students[j];
+                    const genderB = this.getGender(studentB);
+                    
+                    // 寻找相反性别的学生进行交换
+                    if ((needMoreMale && genderB !== 'male') || 
+                        (!needMoreMale && genderB !== 'female')) {
+                        continue;
+                    }
+                    
+                    // 尽量选择成绩相近的学生交换
+                    const scoreDiff = Math.abs(
+                        studentA.compositeScore - studentB.compositeScore);
+                    
+                    if (scoreDiff < bestScoreDiff) {
+                        bestScoreDiff = scoreDiff;
+                        bestCurrentIndex = i;
+                        bestTargetIndex = j;
+                    }
+                }
+            }
+            
+            if (bestScoreDiff < 10 && bestCurrentIndex !== -1) {
+                return {
+                    currentIndex: bestCurrentIndex,
+                    targetIndex: bestTargetIndex
+                };
+            }
+            
+            return null;
+        },
+
+        // 调整成绩平衡
+        adjustScoreBalance: function(scoreType, fieldName) {
+            let totalScore = 0;
+            const classScores = [];
+            
+            assignmentResults.forEach(cls => {
+                totalScore += cls[scoreType];
+                classScores.push(cls[scoreType]);
+            });
+            
+            const avgScore = totalScore / classCount;
+            const stdDev = this.calculateStandardDeviation(classScores);
+            
+            // 如果已经足够均衡，则不调整
+            if (stdDev < 2) return;
+            
+            for (let adjRound = 0; adjRound < 10; adjRound++) {
+                for (let j = 0; j < classCount; j++) {
+                    const currentClass = assignmentResults[j];
+                    
+                    // 只调整与平均值差异较大的班级
+                    if (Math.abs(currentClass[scoreType] - avgScore) > 1.5) {
+                        for (let k = 0; k < classCount; k++) {
+                            if (j === k) continue;
+                            
+                            const targetClass = assignmentResults[k];
+                            
+                            // 寻找分数互补的班级
+                            if ((currentClass[scoreType] > avgScore && targetClass[scoreType] < avgScore) ||
+                                (currentClass[scoreType] < avgScore && targetClass[scoreType] > avgScore)) {
+                                
+                                const needHigher = currentClass[scoreType] < avgScore;
+                                
+                                // 寻找最佳交换学生
+                                const bestSwap = this.findBestStudentSwap(
+                                    currentClass, targetClass, fieldName, needHigher);
+                                
+                                if (bestSwap) {
+                                    this.swapStudents(currentClass, targetClass, 
+                                        bestSwap.currentIndex, bestSwap.targetIndex);
+                                    
+                                    this.updateClassScoreStats(currentClass);
+                                    this.updateClassScoreStats(targetClass);
+                                    
+                                    if (Math.abs(currentClass[scoreType] - avgScore) <= 1.5) {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        
+        // 寻找最佳的学生交换组合
+        findBestStudentSwap: function(classA, classB, fieldName, needHigher) {
+            let bestDiff = Infinity;
+            let bestCurrentIndex = -1;
+            let bestTargetIndex = -1;
+            
+            for (let i = 0; i < classA.students.length; i++) {
+                const studentA = classA.students[i];
+                const scoreA = parseFloat(this.getFieldValue(studentA, fieldName)) || 0;
+                
+                // 筛选出需要交换的学生
+                if (needHigher && scoreA > classA[fieldName + 'Avg']) continue;
+                if (!needHigher && scoreA < classA[fieldName + 'Avg']) continue;
+                
+                for (let j = 0; j < classB.students.length; j++) {
+                    const studentB = classB.students[j];
+                    const scoreB = parseFloat(this.getFieldValue(studentB, fieldName)) || 0;
+                    
+                    // 筛选出可以交换的目标学生
+                    if (needHigher && scoreB <= classB[fieldName + 'Avg']) continue;
+                    if (!needHigher && scoreB >= classB[fieldName + 'Avg']) continue;
+                    
+                    // 计算分数差异
+                    const diff = Math.abs(scoreA - scoreB);
+                    
+                    // 优先选择同性别学生交换
+                    const sameGender = this.getGender(studentA) === this.getGender(studentB);
+                    const weightedDiff = sameGender ? diff * 0.5 : diff;
+                    
+                    if (weightedDiff < bestDiff) {
+                        bestDiff = weightedDiff;
+                        bestCurrentIndex = i;
+                        bestTargetIndex = j;
+                    }
+                }
+            }
+            
+            if (bestDiff < 10) {
+                return {
+                    currentIndex: bestCurrentIndex,
+                    targetIndex: bestTargetIndex
+                };
+            }
+            
+            return null;
+        },
+        
+        // 交换学生并更新统计信息
+        swapStudents: function(classA, classB, indexA, indexB) {
+            const studentA = classA.students[indexA];
+            const studentB = classB.students[indexB];
+            
+            classA.students.splice(indexA, 1);
+            classB.students.splice(indexB, 1);
+            
+            classA.students.push(studentB);
+            classB.students.push(studentA);
+            
+            this.updateClassGenderStats(classA);
+            this.updateClassGenderStats(classB);
+            
+            this.updateClassScoreStats(classA);
+            this.updateClassScoreStats(classB);
+        },
+        
+        // 交换两个班级的学生
+        swapStudentsBetweenClasses: function(sourceClassIndex, targetClassIndex, studentIdA, studentIdB) {
+            const sourceClass = assignmentResults[sourceClassIndex];
+            const targetClass = assignmentResults[targetClassIndex];
+            
+            let indexA = -1;
+            for (let i = 0; i < sourceClass.students.length; i++) {
+                if (String(sourceClass.students[i][fieldInfo.idField]) === studentIdA) {
+                    indexA = i;
+                    break;
+                }
+            }
+            
+            let indexB = -1;
+            for (let j = 0; j < targetClass.students.length; j++) {
+                if (String(targetClass.students[j][fieldInfo.idField]) === studentIdB) {
+                    indexB = j;
+                    break;
+                }
+            }
+            
+            if (indexA === -1 || indexB === -1) return false;
+            
+            const studentA = sourceClass.students[indexA];
+            const studentB = targetClass.students[indexB];
+            
+            this.swapStudents(sourceClass, targetClass, indexA, indexB);
+            
+            this.recordTransferHistory(
+                sourceClassIndex, targetClassIndex,
+                studentIdA, studentA[fieldInfo.nameField],
+                studentIdB, studentB[fieldInfo.nameField],
+                '交换调班'
+            );
+            
+            return true;
+        },
+        
+        // 记录调班历史
+        recordTransferHistory: function(fromClassIdx, toClassIdx, studentId, studentName, swapStudentId, swapStudentName, transferType) {
+            transferHistory.push({
+                timestamp: new Date().toLocaleString(),
+                fromClass: assignmentResults[fromClassIdx].className,
+                toClass: assignmentResults[toClassIdx].className,
+                studentId: studentId,
+                studentName: studentName,
+                swapStudentId: swapStudentId,
+                swapStudentName: swapStudentName,
+                transferType: transferType
+            });
+        },
+        
+        // 更新班级性别统计
+        updateClassGenderStats: function(classData) {
+            classData.maleCount = 0;
+            classData.femaleCount = 0;
+            
+            classData.students.forEach(student => {
+                const gender = this.getGender(student);
+                if (gender === 'male') {
+                    classData.maleCount++;
+                } else if (gender === 'female') {
+                    classData.femaleCount++;
+                }
+            });
+        },
+        
+        // 更新班级成绩统计
+        updateClassScoreStats: function(classData) {
+            const studentCount = classData.students.length;
+            if (studentCount === 0) return;
+            
+            classData.totalScoreTotal = 0;
+            classData.compositeScoreTotal = 0;
+            
+            fieldInfo.subjects.forEach(subject => {
+                classData[subject + 'Total'] = 0;
+            });
+            
+            classData.students.forEach(student => {
+                const totalScore = parseFloat(this.getFieldValue(student, fieldInfo.totalScoreField)) || 0;
+                classData.totalScoreTotal += totalScore;
+                
+                classData.compositeScoreTotal += student.compositeScore || 0;
+                
+                fieldInfo.subjects.forEach(subject => {
+                    const score = parseFloat(this.getFieldValue(student, subject)) || 0;
+                    classData[subject + 'Total'] += score;
+                });
+            });
+            
+            classData.totalScoreAvg = Math.round((classData.totalScoreTotal / studentCount) * 10) / 10;
+            classData.compositeScoreAvg = Math.round((classData.compositeScoreTotal / studentCount) * 10) / 10;
+                
+            fieldInfo.subjects.forEach(subject => {
+                classData[subject + 'Avg'] = studentCount > 0 
+                    ? Math.round((classData[subject + 'Total'] / studentCount) * 10) / 10 
+                    : 0;
+            });
+        },
+        
+        // 计算标准差
+        calculateStandardDeviation: function(values) {
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            const squareDiffs = values.map(value => {
+                const diff = value - avg;
+                return diff * diff;
+            });
+            const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / squareDiffs.length;
+            return Math.sqrt(avgSquareDiff);
+        },
+        
+        // 获取性别
+        getGender: function(student) {
+            if (!fieldInfo.genderField) return 'unknown';
+            
+            const value = String(this.getFieldValue(student, fieldInfo.genderField)).toLowerCase();
+            if (value.includes('男') || value.includes('male') || value === 'm') {
+                return 'male';
+            } else if (value.includes('女') || value.includes('female') || value === 'f') {
+                return 'female';
+            }
+            
+            return 'unknown';
+        },
+        
+        // 获取性别显示文本
+        getGenderText: function(student) {
+            const gender = this.getGender(student);
+            return gender === 'male' ? '男' : (gender === 'female' ? '女' : '未知');
+        },
+
+        // 获取字段值
+        getFieldValue: function(student, field) {
+            return student[field] !== undefined ? student[field] : 0;
+        },
+        
+        // 获取分班结果
+        getAssignmentResults: function() {
+            return assignmentResults;
+        },
+        
+        // 获取调班历史
+        getTransferHistory: function() {
+            return transferHistory;
+        },
+        
+        // 生成替代分班方案
+        generateAlternativeAssignments: function(iterations = 3) {
+            const originalResults = JSON.parse(JSON.stringify(assignmentResults));
+            const alternativePlans = [originalResults];
+            
+            for (let plan = 1; plan < iterations; plan++) {
+                // 复制当前结果作为基础
+                assignmentResults = JSON.parse(JSON.stringify(originalResults));
+                
+                // 随机交换一些总分相近的学生
+                for (let swapCount = 0; swapCount < Math.floor(studentData.length / 20); swapCount++) {
+                    // 随机选择两个不同的班级
+                    const classAIndex = Math.floor(Math.random() * classCount);
+                    let classBIndex = Math.floor(Math.random() * classCount);
+                    while (classBIndex === classAIndex) {
+                        classBIndex = Math.floor(Math.random() * classCount);
+                    }
+                    
+                    const classA = assignmentResults[classAIndex];
+                    const classB = assignmentResults[classBIndex];
+                    
+                    // 随机选择班级A中的一个学生
+                    const studentAIndex = Math.floor(Math.random() * classA.students.length);
+                    const studentA = classA.students[studentAIndex];
+                    const studentAScore = parseFloat(this.getFieldValue(studentA, fieldInfo.totalScoreField)) || 0;
+                    
+                    // 在班级B中寻找总分相近的学生
+                    let bestMatchIndex = -1;
+                    let minScoreDiff = Infinity;
+                    
+                    for (let i = 0; i < classB.students.length; i++) {
+                        const studentB = classB.students[i];
+                        const studentBScore = parseFloat(this.getFieldValue(studentB, fieldInfo.totalScoreField)) || 0;
+                        const scoreDiff = Math.abs(studentAScore - studentBScore);
+                        
+                        if (scoreDiff < minScoreDiff) {
+                            minScoreDiff = scoreDiff;
+                            bestMatchIndex = i;
+                        }
+                    }
+                    
+                    // 如果找到了合适的匹配，交换学生
+                    if (bestMatchIndex !== -1 && minScoreDiff < 15) {
+                        this.swapStudents(classA, classB, studentAIndex, bestMatchIndex);
+                    }
+                }
+                
+                // 保存当前方案
+                alternativePlans.push(JSON.parse(JSON.stringify(assignmentResults)));
+            }
+            
+            // 恢复原始结果
+            assignmentResults = originalResults;
+            
+            return alternativePlans;
+        },
+        
+        // 应用指定的分班方案
+        applyAssignmentPlan: function(planIndex, plans) {
+            if (planIndex >= 0 && planIndex < plans.length) {
+                assignmentResults = JSON.parse(JSON.stringify(plans[planIndex]));
+                return true;
+            }
+            return false;
+        },
+        
+        // 分析并识别不同类型的字段
+            analyzeFields: function() {
+                if (studentData.length === 0) return fieldInfo;
+
+                fieldInfo = {
+                    idField: '',
+                    nameField: '',
+                    genderField: '',
+                    totalScoreField: '',
+                    subjects: [],
+                    nonScoreFields: []
+                };
+
+                const fields = Object.keys(studentData[0]);
+
+                const nonScorePatterns = [
+                    '学号', '编号', '序号', 'id', 'ID', 
+                    '班级', '原班级', '学籍号', '入学号', '班号',
+                    '姓名', '性别', '出生', '生日', '民族',
+                    '住址', '电话', '家长', '来源', '籍贯',
+                    '身份证', '证件', '照片', '状态', '备注'
+                ];
+
+                const namePatterns = ['姓名', '名字', '名'];
+                const genderPatterns = ['性别', '男女'];
+                const totalScorePatterns = ['总分', '总成绩', '合计'];
+                // 扩展学科列表，确保包含所有可能的学科名称
+                const subjectPatterns = ['语文', '数学', '英语', '物理', '化学', '生物', '政治', '历史', '政史', '史政', '地理', '道法', '科学', '音乐', '体育', '体健', '美术', '信息', '劳技', '音乐', '美术', '信息', '科学'];
+
+                for (let i = 0; i < fields.length; i++) {
+                    const field = fields[i];
+                    const lowerField = field.toLowerCase();
+
+                    let isNonScore = nonScorePatterns.some(pattern => {
+                        return field.includes(pattern) || lowerField.includes(pattern.toLowerCase());
+                    });
+                
+                if (isNonScore) {
+                        fieldInfo.nonScoreFields.push(field);
+
+                        if (!fieldInfo.nameField && namePatterns.some(pattern => {
+                            return field.includes(pattern) || lowerField.includes(pattern.toLowerCase());
+                        })) {
+                            fieldInfo.nameField = field;
+                        }
+
+                        if (!fieldInfo.genderField && genderPatterns.some(pattern => {
+                            return field.includes(pattern) || lowerField.includes(pattern.toLowerCase());
+                        })) {
+                            fieldInfo.genderField = field;
+                        }
+
+                        if (!fieldInfo.idField && 
+                            (field.includes('学号') || field.includes('编号') || 
+                             field.includes('序号') || lowerField.includes('id'))) {
+                            fieldInfo.idField = field;
+                        }
+
+                        continue;
+                    }
+                
+                let hasNonNumericValue = false;
+
+                    for (let j = 0; j < Math.min(10, studentData.length); j++) {
+                        const value = studentData[j][field];
+                        if (value === null || value === undefined || value === '') continue;
+
+                        if (isNaN(parseFloat(value))) {
+                            hasNonNumericValue = true;
+                            break;
+                        }
+                    }
+
+                    if (hasNonNumericValue) {
+                        fieldInfo.nonScoreFields.push(field);
+                        continue;
+                    }
+                
+                if (!fieldInfo.totalScoreField && totalScorePatterns.some(pattern => {
+                        return field.includes(pattern) || lowerField.includes(pattern.toLowerCase());
+                    })) {
+                        fieldInfo.totalScoreField = field;
+                        fieldInfo.subjects.push(field);
+                        continue;
+                    }
+                
+                let isSubject = false;
+                    const cleanedField = field.replace('成绩', '').replace('分数', '');
+                    const lowerCleanedField = cleanedField.toLowerCase();
+
+                    // 改进学科匹配逻辑，先尝试匹配去掉'成绩'/'分数'后缀的字段
+                    if (subjectPatterns.some(pattern => {
+                        return cleanedField === pattern || lowerCleanedField === pattern.toLowerCase() ||
+                               cleanedField.includes(pattern) || lowerCleanedField.includes(pattern.toLowerCase());
+                    })) {
+                        isSubject = true;
+                    } else if (subjectPatterns.some(pattern => {
+                        // 如果直接匹配失败，尝试原始字段匹配
+                        return field.includes(pattern) || lowerField.includes(pattern.toLowerCase());
+                    })) {
+                        isSubject = true;
+                    }
+                
+                if (isSubject) {
+                        fieldInfo.subjects.push(field);
+                    } else {
+                        fieldInfo.nonScoreFields.push(field);
+                    }
+
+                    // 特殊处理'政史'，确保它不会被遗漏
+                    if (field.includes('政史') || lowerField.includes('政史') ||
+                        cleanedField.includes('政史') || lowerCleanedField.includes('政史')) {
+                        if (!fieldInfo.subjects.includes(field)) {
+                            fieldInfo.subjects.push(field);
+                        }
+                    }
+            }
+            
+            // 验证必要字段
+            const missingFields = [];
+            if (!fieldInfo.nameField) missingFields.push('姓名');
+            if (!fieldInfo.genderField) missingFields.push('性别');
+            if (fieldInfo.subjects.length === 0) missingFields.push('至少一个学科成绩');
+            
+            if (missingFields.length > 0) {
+                throw new Error('数据缺少必要的字段: ' + missingFields.join(', '));
+            }
+            
+            // 如果没有ID字段，创建一个临时ID
+            if (!fieldInfo.idField) {
+                fieldInfo.idField = '临时ID';
+                for (let k = 0; k < studentData.length; k++) {
+                    studentData[k][fieldInfo.idField] = k + 1;
+                }
+                fieldInfo.nonScoreFields.push(fieldInfo.idField);
+            }
+            
+            // 如果没有总分字段，计算总分
+            if (!fieldInfo.totalScoreField) {
+                fieldInfo.totalScoreField = '计算总分';
+                fieldInfo.subjects.push(fieldInfo.totalScoreField);
+                
+                for (let l = 0; l < studentData.length; l++) {
+                    let total = 0;
+                    for (let m = 0; m < fieldInfo.subjects.length; m++) {
+                        const subject = fieldInfo.subjects[m];
+                        if (subject === fieldInfo.totalScoreField) continue;
+                        total += parseFloat(studentData[l][subject]) || 0;
+                    }
+                    studentData[l][fieldInfo.totalScoreField] = total;
+                }
+            }
+            
+            return fieldInfo;
+        }
+    };
+})();
+    </script>
+</body>
+</html>
+    

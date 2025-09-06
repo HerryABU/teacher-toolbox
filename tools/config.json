@@ -1,0 +1,40 @@
+{
+  "categories": [
+    {
+      "id": "enrollment_management",
+      "name": "入学基础管理",
+      "icon": "DocumentAdd",
+      "path": "/tools/categories/enrollment_management"
+    },
+    {
+      "id": "classroom_interaction",
+      "name": "课堂互动与纪律管理",
+      "icon": "ChatLineSquare",
+      "path": "/tools/categories/classroom_interaction"
+    },
+    {
+      "id": "homework_and_grades",
+      "name": "作业与学习管理",
+      "icon": "EditPen",
+      "path": "/tools/categories/homework_and_grades"
+    },
+    {
+      "id": "daily_affairs",
+      "name": "日常事务与沟通",
+      "icon": "Calendar",
+      "path": "/tools/categories/daily_affairs"
+    },
+    {
+      "id": "activities_and_awards",
+      "name": "活动与评选",
+      "icon": "Medal",
+      "path": "/tools/categories/activities_and_awards"
+    },
+    {
+      "id": "announcement",
+      "name": "公告",
+      "icon": "Notification",
+      "path": "/tools/categories/announcement"
+    }
+  ]
+}

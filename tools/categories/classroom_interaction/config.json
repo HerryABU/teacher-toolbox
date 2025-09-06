@@ -1,0 +1,25 @@
+{
+  "tools": [
+    {
+      "id": "random_student_selector",
+      "name": "随机抽号",
+      "description": "支持按班级、小组等范围随机选择学生，可设置权重",
+      "icon": "Dice",
+      "path": "./tools/random_student_selector/index.html"
+    },
+    {
+      "id": "classroom_attendance",
+      "name": "课堂考勤",
+      "description": "快速记录学生出勤情况，支持多种考勤模式",
+      "icon": "Check",
+      "path": "./tools/classroom_attendance/index.html"
+    },
+    {
+      "id": "classroom_scoreboard",
+      "name": "积分管理",
+      "description": "记录和管理学生课堂表现积分，支持加减分操作",
+      "icon": "Trophy",
+      "path": "./tools/classroom_scoreboard/index.html"
+    }
+  ]
+}

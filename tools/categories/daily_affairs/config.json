@@ -1,0 +1,32 @@
+{
+  "tools": [
+    {
+      "id": "class_affairs_reminder",
+      "name": "事务提醒",
+      "description": "设置和管理班级事务提醒，支持多种提醒方式",
+      "icon": "Bell",
+      "path": "./tools/class_affairs_reminder/index.html"
+    },
+    {
+      "id": "parent_teacher_communication",
+      "name": "家校联系",
+      "description": "记录和管理与家长的沟通情况，支持消息模板",
+      "icon": "Message",
+      "path": "./tools/parent_teacher_communication/index.html"
+    },
+    {
+      "id": "student_health_management",
+      "name": "健康管理",
+      "description": "记录学生健康状况，支持健康数据统计",
+      "icon": "FirstAid",
+      "path": "./tools/student_health_management/index.html"
+    },
+    {
+      "id": "item_distribution",
+      "name": "物品发放",
+      "description": "管理班级物品发放记录，支持物品库存管理",
+      "icon": "Box",
+      "path": "./tools/item_distribution/index.html"
+    }
+  ]
+}

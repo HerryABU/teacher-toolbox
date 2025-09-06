@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加项目 - 教师工具箱</title>
+    
+    <!-- 引入Vue.js和相关库 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/pinia@2/dist/pinia.iife.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    
+    <!-- 引入工具函数 -->
+    <script src="src/js/utils.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            color: #303133;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #409eff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .form-container {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #303133;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #409eff;
+        }
+        
+        .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 6px;
+            font-size: 14px;
+            min-height: 100px;
+            resize: vertical;
+            transition: border-color 0.2s ease;
+        }
+        
+        .form-textarea:focus {
+            outline: none;
+            border-color: #409eff;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: white;
+            transition: border-color 0.2s ease;
+        }
+        
+        .form-select:focus {
+            outline: none;
+            border-color: #409eff;
+        }
+        
+        .select-with-input {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .select-with-input .form-select {
+            flex: 1;
+        }
+        
+        .select-with-input .form-input {
+            flex: 1;
+        }
+        
+        .select-with-input .new-input {
+            display: none;
+        }
+        
+        .select-with-input.show-new .new-input {
+            display: block;
+        }
+        
+        .select-with-input.show-new .form-select {
+            display: none;
+        }
+        
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .icon-option {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 2px solid #dcdfe6;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 20px;
+        }
+        
+        .icon-option:hover {
+            border-color: #409eff;
+            background-color: #ecf5ff;
+        }
+        
+        .icon-option.selected {
+            border-color: #409eff;
+            background-color: #409eff;
+            color: white;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background-color: #409eff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #66b1ff;
+        }
+        
+        .btn-secondary {
+            background-color: #909399;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #a6a9ad;
+        }
+        
+        .btn-danger {
+            background-color: #f56c6c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #f78989;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .success-message {
+            background-color: #f0f9ff;
+            border: 1px solid #409eff;
+            color: #409eff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+        }
+        
+        .error-message {
+            background-color: #fef0f0;
+            border: 1px solid #f56c6c;
+            color: #f56c6c;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .tools-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e4e7ed;
+        }
+        
+        .tools-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .tools-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #303133;
+        }
+        
+        .add-tool-btn {
+            background-color: #67c23a;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .add-tool-btn:hover {
+            background-color: #85ce61;
+        }
+        
+        .tool-item {
+            background-color: #f5f7fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .tool-info {
+            flex: 1;
+        }
+        
+        .tool-name {
+            font-weight: 500;
+            color: #303133;
+            margin-bottom: 5px;
+        }
+        
+        .tool-desc {
+            font-size: 12px;
+            color: #909399;
+        }
+        
+        .remove-tool-btn {
+            background-color: #f56c6c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .remove-tool-btn:hover {
+            background-color: #f78989;
+        }
+        
+        .tool-form {
+            background-color: #f5f7fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .tool-form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .tool-form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .icon-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+            
+            .select-with-input {
+                flex-direction: column;
+            }
+            
+            .tool-form-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <a href="index.html" class="back-link">← 返回主页</a>
+            
+            <div class="header">
+                <h1>添加项目</h1>
+                <p>创建新的工具分类和工具</p>
+            </div>
+            
+            <div class="success-message" :class="{ show: successMessage }">
+                {{ successMessage }}
+            </div>
+            
+            <div class="error-message" :class="{ show: errorMessage }">
+                {{ errorMessage }}
+            </div>
+            
+            <div class="form-container">
+                <form @submit.prevent="submitForm">
+                    <div class="form-group">
+                        <label class="form-label">分类选择</label>
+                        <div class="select-with-input" :class="{ 'show-new': form.newCategory }">
+                            <select class="form-select" v-model="form.selectedCategory" @change="onCategoryChange">
+                                <option value="">选择现有分类</option>
+                                <option v-for="category in existingCategories" :key="category.id" :value="category.id">
+                                    {{ category.name }}
+                                </option>
+                                <option value="new">+ 新建分类</option>
+                            </select>
+                            <input type="text" class="form-input new-input" v-model="form.categoryName" placeholder="输入新分类名称">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" v-if="form.newCategory">
+                        <label class="form-label">分类ID</label>
+                        <input type="text" class="form-input" v-model="form.categoryId" placeholder="请输入分类ID（英文）" required>
+                    </div>
+                    
+                    <div class="form-group" v-if="form.newCategory">
+                        <label class="form-label">分类图标</label>
+                        <div class="icon-grid">
+                            <div v-for="icon in availableIcons" 
+                                 :key="icon.value"
+                                 class="icon-option"
+                                 :class="{ selected: form.categoryIcon === icon.value }"
+                                 @click="form.categoryIcon = icon.value">
+                                {{ icon.display }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tools-section">
+                        <div class="tools-header">
+                            <div class="tools-title">工具管理</div>
+                            <button type="button" class="add-tool-btn" @click="addTool">+ 添加工具</button>
+                        </div>
+                        
+                        <div v-for="(tool, index) in form.tools" :key="index" class="tool-form">
+                            <div class="tool-form-row">
+                                <div class="form-group">
+                                    <label class="form-label">工具选择</label>
+                                    <div class="select-with-input" :class="{ 'show-new': tool.newTool }">
+                                        <select class="form-select" v-model="tool.selectedTool" @change="onToolChange(tool)">
+                                            <option value="">选择现有工具</option>
+                                            <option v-for="existingTool in existingTools" :key="existingTool.id" :value="existingTool.id">
+                                                {{ existingTool.name }}
+                                            </option>
+                                            <option value="new">+ 新建工具</option>
+                                        </select>
+                                        <input type="text" class="form-input new-input" v-model="tool.name" placeholder="输入新工具名称">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">操作</label>
+                                    <button type="button" class="btn btn-danger btn-small" @click="removeTool(index)">删除</button>
+                                </div>
+                            </div>
+                            
+                            <div class="tool-form-row" v-if="tool.newTool">
+                                <div class="form-group">
+                                    <label class="form-label">工具ID</label>
+                                    <input type="text" class="form-input" v-model="tool.id" placeholder="请输入工具ID（英文）">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">工具图标</label>
+                                    <select class="form-select" v-model="tool.icon">
+                                        <option v-for="icon in availableIcons" :key="icon.value" :value="icon.value">
+                                            {{ icon.display }} {{ icon.value }}
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group" v-if="tool.newTool">
+                                <label class="form-label">工具描述</label>
+                                <textarea class="form-textarea" v-model="tool.description" placeholder="请输入工具描述"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div v-if="form.tools.length === 0" style="text-align: center; color: #909399; padding: 20px;">
+                            暂无工具，点击"添加工具"按钮添加
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">保存项目</button>
+                        <button type="button" class="btn btn-secondary" @click="resetForm">重置</button>
+                        <a href="del.html" class="btn btn-danger">删除项目</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    form: {
+                        selectedCategory: '',
+                        newCategory: false,
+                        categoryName: '',
+                        categoryId: '',
+                        categoryIcon: 'DocumentAdd',
+                        tools: []
+                    },
+                    existingCategories: [],
+                    existingTools: [],
+                    availableIcons: [
+                        { value: 'DocumentAdd', display: '📄' },
+                        { value: 'ChatLineSquare', display: '💬' },
+                        { value: 'EditPen', display: '✏️' },
+                        { value: 'Calendar', display: '📅' },
+                        { value: 'Medal', display: '🏆' },
+                        { value: 'Aim', display: '🎯' },
+                        { value: 'Grid', display: '📊' },
+                        { value: 'Tickets', display: '🎫' },
+                        { value: 'UserFilled', display: '👤' },
+                        { value: 'Dice', display: '🎲' },
+                        { value: 'Check', display: '✅' },
+                        { value: 'Trophy', display: '🏆' },
+                        { value: 'DataAnalysis', display: '📈' },
+                        { value: 'TrendCharts', display: '📉' },
+                        { value: 'Collection', display: '📚' },
+                        { value: 'Bell', display: '🔔' },
+                        { value: 'Message', display: '💬' },
+                        { value: 'FirstAid', display: '🏥' },
+                        { value: 'Box', display: '📦' },
+                        { value: 'List', display: '📋' }
+                    ],
+                    successMessage: '',
+                    errorMessage: '',
+                    toolCounter: 1
+                };
+            },
+            async mounted() {
+                await this.loadExistingData();
+            },
+            methods: {
+                async loadExistingData() {
+                    try {
+                        // 加载现有分类
+                        const categoryData = await window.ToolboxUtils.loadConfig('tools/config.json');
+                        if (categoryData) {
+                            this.existingCategories = categoryData.categories;
+                        }
+                        
+                        // 加载现有工具（从各个分类的配置文件）
+                        this.existingTools = [];
+                        for (let category of this.existingCategories) {
+                            try {
+                                const categoryPath = category.path.replace('/tools/categories', '');
+                                const toolData = await window.ToolboxUtils.loadConfig(`tools/categories${categoryPath}/config.json`);
+                                if (toolData) {
+                                    // 为工具添加分类信息
+                                    toolData.tools.forEach(tool => {
+                                        this.existingTools.push({
+                                            ...tool,
+                                            categoryName: category.name,
+                                            categoryId: category.id
+                                        });
+                                    });
+                                }
+                            } catch (error) {
+                                console.error(`加载分类 ${category.name} 的工具数据失败:`, error);
+                            }
+                        }
+                        
+                        console.log('现有分类:', this.existingCategories);
+                        console.log('现有工具:', this.existingTools);
+                        
+                    } catch (error) {
+                        console.error('加载现有数据失败:', error);
+                    }
+                },
+                
+                onCategoryChange() {
+                    if (this.form.selectedCategory === 'new') {
+                        this.form.newCategory = true;
+                        this.form.categoryName = '';
+                        this.form.categoryId = '';
+                    } else {
+                        this.form.newCategory = false;
+                        // 如果选择了现有分类，填充相关信息
+                        const selectedCategory = this.existingCategories.find(c => c.id === this.form.selectedCategory);
+                        if (selectedCategory) {
+                            this.form.categoryName = selectedCategory.name;
+                            this.form.categoryId = selectedCategory.id;
+                            this.form.categoryIcon = selectedCategory.icon;
+                        }
+                    }
+                },
+                
+                onToolChange(tool) {
+                    if (tool.selectedTool === 'new') {
+                        tool.newTool = true;
+                        tool.name = '';
+                        tool.id = '';
+                        tool.description = '';
+                        tool.icon = 'Aim';
+                    } else {
+                        tool.newTool = false;
+                        // 如果选择了现有工具，填充相关信息
+                        const selectedTool = this.existingTools.find(t => t.id === tool.selectedTool);
+                        if (selectedTool) {
+                            tool.name = selectedTool.name;
+                            tool.id = selectedTool.id;
+                            tool.description = selectedTool.description;
+                            tool.icon = selectedTool.icon;
+                        }
+                    }
+                },
+                
+                addTool() {
+                    this.form.tools.push({
+                        selectedTool: '',
+                        newTool: false,
+                        id: `new_tool_${this.toolCounter++}`,
+                        name: `新工具 ${this.toolCounter}`,
+                        description: '请编辑工具描述',
+                        icon: 'Aim'
+                    });
+                },
+                
+                removeTool(index) {
+                    this.form.tools.splice(index, 1);
+                },
+                
+                resetForm() {
+                    this.form = {
+                        selectedCategory: '',
+                        newCategory: false,
+                        categoryName: '',
+                        categoryId: '',
+                        categoryIcon: 'DocumentAdd',
+                        tools: []
+                    };
+                    this.toolCounter = 1;
+                    this.successMessage = '';
+                    this.errorMessage = '';
+                },
+                
+                async submitForm() {
+                    try {
+                        // 验证表单
+                        if (!this.form.selectedCategory) {
+                            this.errorMessage = '请选择分类或创建新分类';
+                            return;
+                        }
+                        
+                        if (this.form.newCategory && (!this.form.categoryName || !this.form.categoryId)) {
+                            this.errorMessage = '请填写新分类的名称和ID';
+                            return;
+                        }
+                        
+                        // 验证工具
+                        for (let tool of this.form.tools) {
+                            if (tool.newTool && (!tool.name || !tool.id)) {
+                                this.errorMessage = '请填写新工具的名称和ID';
+                                return;
+                            }
+                        }
+                        
+                        // 准备要保存的数据
+                        const saveData = {
+                            category: null,
+                            tools: []
+                        };
+                        
+                        // 处理分类数据
+                        if (this.form.newCategory) {
+                            saveData.category = {
+                                id: this.form.categoryId,
+                                name: this.form.categoryName,
+                                icon: this.form.categoryIcon,
+                                path: `/tools/categories/${this.form.categoryId}`
+                            };
+                        } else {
+                            // 使用现有分类
+                            const selectedCategory = this.existingCategories.find(c => c.id === this.form.selectedCategory);
+                            if (selectedCategory) {
+                                saveData.category = {
+                                    id: selectedCategory.id,
+                                    name: selectedCategory.name,
+                                    icon: selectedCategory.icon,
+                                    path: selectedCategory.path
+                                };
+                            }
+                        }
+                        
+                        // 处理工具数据
+                        for (let tool of this.form.tools) {
+                            if (tool.newTool) {
+                                saveData.tools.push({
+                                    id: tool.id,
+                                    name: tool.name,
+                                    description: tool.description,
+                                    icon: tool.icon,
+                                    path: `./tools/${tool.id}/index.html`
+                                });
+                            } else {
+                                // 使用现有工具
+                                const selectedTool = this.existingTools.find(t => t.id === tool.selectedTool);
+                                if (selectedTool) {
+                                    saveData.tools.push({
+                                        id: selectedTool.id,
+                                        name: selectedTool.name,
+                                        description: selectedTool.description,
+                                        icon: selectedTool.icon,
+                                        path: selectedTool.path
+                                    });
+                                }
+                            }
+                        }
+                        
+                        // 模拟保存到JSON文件
+                        console.log('准备更新JSON文件...');
+                        console.log('更新tools/config.json');
+                        if (saveData.category) {
+                            console.log(`创建新分类目录: tools/categories/${saveData.category.id}`);
+                            console.log(`创建新分类配置文件: tools/categories/${saveData.category.id}/config.json`);
+                        }
+                        saveData.tools.forEach(tool => {
+                            console.log(`创建新工具目录: tools/categories/${saveData.category.id}/tools/${tool.id}`);
+                            console.log(`创建新工具页面: tools/categories/${saveData.category.id}/tools/${tool.id}/index.html`);
+                        });
+                        console.log('JSON文件更新完成！');
+                        
+                        // 使用本地存储模拟保存
+                        const success = window.ToolboxUtils.localStorageMock.saveConfig('newProject', saveData);
+                        if (success) {
+                            this.successMessage = '项目保存成功！';
+                            this.errorMessage = '';
+                            
+                            // 3秒后清空成功消息
+                            setTimeout(() => {
+                                this.successMessage = '';
+                            }, 3000);
+                        } else {
+                            this.errorMessage = '保存失败，请重试';
+                            this.successMessage = '';
+                        }
+                        
+                    } catch (error) {
+                        console.error('保存失败:', error);
+                        this.errorMessage = '保存失败，请重试';
+                        this.successMessage = '';
+                    }
+                },
+                
+                getIcon(iconName) {
+                    const icons = {
+                        'DocumentAdd': '📄',
+                        'ChatLineSquare': '💬',
+                        'EditPen': '✏️',
+                        'Calendar': '📅',
+                        'Medal': '🏆',
+                        'Aim': '🎯',
+                        'Grid': '📊',
+                        'Tickets': '🎫',
+                        'UserFilled': '👤',
+                        'Dice': '🎲',
+                        'Check': '✅',
+                        'Trophy': '🏆',
+                        'DataAnalysis': '📈',
+                        'TrendCharts': '📉',
+                        'Collection': '📚',
+                        'Bell': '🔔',
+                        'Message': '💬',
+                        'FirstAid': '🏥',
+                        'Box': '📦',
+                        'List': '📋'
+                    };
+                    return icons[iconName] || '🔧';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+
+<-- 要真正创建对应的文件夹和添加json字段到json，结构要先选择/添加分类，点击下一步，然后选择/添加应用，点击下一步，然后上传项目文件/或修改，并选择入口文件目前用得是http-server-->

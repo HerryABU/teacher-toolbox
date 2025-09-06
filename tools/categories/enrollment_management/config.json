@@ -1,0 +1,25 @@
+{
+  "tools": [
+    {
+      "id": "smart_class_division",
+      "name": "智能分班",
+      "description": "支持按性别、成绩、户籍等多维度均衡分班，可手动微调",
+      "icon": "Aim",
+      "path": "./tools/smart_class_division/index.html"
+    },
+    {
+      "id": "seat_arrangement",
+      "name": "座位编排",
+      "description": "按身高、视力、性别搭配等规则自动排座，支持手动调整",
+      "icon": "Grid",
+      "path": "./tools/seat_arrangement/index.html"
+    },
+    {
+      "id": "student_id_generator",
+      "name": "学号管理",
+      "description": "自动生成学号，支持按班级、性别、入学顺序等规则编排",
+      "icon": "Tickets",
+      "path": "./tools/student_id_generator/index.html"
+    }
+  ]
+}

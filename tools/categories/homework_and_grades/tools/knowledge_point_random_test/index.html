@@ -1,0 +1,1472 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识点抽背抽测</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 100%;
+            padding: 15px;
+            margin: 0 auto;
+        }
+        @media (min-width: 768px) {
+            .container {
+                max-width: 900px;
+                padding: 20px;
+            }
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #4a6fa5;
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .header input {
+            width: 100%;
+            padding: 8px;
+            font-size: 1.2rem;
+            text-align: center;
+            border: none;
+            background-color: transparent;
+            color: white;
+            border-bottom: 1px solid white;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 15px;
+            margin: 5px;
+            background-color: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #3a5a80;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .class-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .class-item {
+            width: 150px;
+            margin: 10px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+            position: relative;
+        }
+        .class-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .class-actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: none;
+        }
+        .class-item:hover .class-actions {
+            display: block;
+        }
+        .class-edit, .class-delete {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 2px 5px;
+            margin: 0 2px;
+            border-radius: 3px;
+        }
+        .class-edit {
+            color: #4a6fa5;
+        }
+        .class-delete {
+            color: #dc3545;
+        }
+        .student-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .student-item {
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .student-item:hover {
+            background-color: #f0f0f0;
+        }
+        .student-item.perfect {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .student-item.good {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .student-item.poor {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .student-item.none {
+            color: #333;
+        }
+        .student-scores {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.8rem;
+        }
+        .star-score {
+            color: #4a6fa5;
+        }
+        .point-score {
+            color: #28a745;
+        }
+        .knowledge-list {
+            margin-top: 15px;
+        }
+        .knowledge-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .knowledge-item.perfect {
+            border-left: 4px solid #28a745;
+        }
+        .knowledge-content {
+            margin-right: 100px;
+        }
+        .rating-stars {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .star {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin: 0 2px;
+            cursor: pointer;
+            color: #ccc;
+        }
+        .star.filled {
+            color: black;
+        }
+        .rating-numbers {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .rating-number {
+            width: 30px;
+            height: 30px;
+            margin: 0 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .rating-number.selected {
+            background-color: #4a6fa5;
+            color: white;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-title {
+            margin-top: 0;
+            color: #4a6fa5;
+        }
+        .modal-footer {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .instructions {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #4a6fa5;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .toolbar-left, .toolbar-right {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .clear-ratings {
+            margin-left: 10px;
+            font-size: 0.9rem;
+            color: #dc3545;
+            cursor: pointer;
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .rating-mode-toggle {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+        }
+        .rating-mode-btn {
+            padding: 5px 10px;
+            background-color: #e9ecef;
+            border: none;
+            cursor: pointer;
+        }
+        .rating-mode-btn.active {
+            background-color: #4a6fa5;
+            color: white;
+        }
+        .back-btn {
+            margin-right: 10px;
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .reset-knowledge-btn {
+            font-size: 0.9rem;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 5px 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: none;
+        }
+        .sort-buttons {
+            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .sort-buttons .btn.active {
+            background-color: #4a6fa5;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 主页 -->
+        <div id="home-page" class="page active">
+            <div class="header">
+                <h1><input type="text" id="app-title" value="知识点随抽测小程序"></h1>
+            </div>
+            
+            <div class="btn-group">
+                <button id="import-knowledge-btn" class="btn btn-secondary">导入知识点</button>
+                <button id="reset-all-data-btn" class="btn btn-danger">初始化数据</button>
+            </div>
+            
+            <h2>班级列表</h2>
+            <div id="class-list" class="class-list">
+                <div id="add-class-item" class="class-item" style="background-color: #e9ecef;">
+                    <span>+ 添加班级</span>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button id="export-data-btn" class="btn btn-success">导出数据</button>
+                <button id="import-data-btn" class="btn btn-secondary">导入数据</button>
+            </div>
+            
+            <div class="instructions">
+                <h3>使用说明</h3>
+                <ol>
+                    <li>为了方便随时跟进学生的背诵和记录默写情况，制作了这一个知识点随测评价小程序，老师们可以根据个人情况使用</li>
+                   <li>本主页上的名称双击后，可以更改，如更改为**班知识点随测小程序</li>
+                    <li>添加班级后，可以进入不同班级页面，根据导入的知识点进行点评</li>
+                   <li>学生名单，请准备好一个含有学号和姓名的EXCEL，发到手机后，另存到手机里，然后通过系统的导入文件功能导入，请按页面提示操作</li>
+                   <li>知识清单，请准备好一个含有序号和识别内容的EXCEL，发到手机后，另存到手机里，然后通过系统的导入文件功能导入，请按页面提示操作</li>
+                    <li>可以用EXCEL导出不同班级的评测结果,并自动进行比例计算，分出优秀学生和需关注学生</li>
+                    <li>本程序只能在一台设备（手机或电脑都可以）运行，如果需要在另外一台设备运行，需要先导出产生的数据，再在另外一台设备导入</li>
+                    <li>程序来源：心血来潮，本系统本来计划用来随时登记学生的诗歌背诵和抽默情况，把想法和构思整理后，由AI实现了我的想法。想来对对文科老师也适用。欢迎老师们根据个人实际适用</li>
+                    <li>制作人：桂江二中 张老师  2025年4月单机版</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- 班级页面 -->
+        <div id="class-page" class="page">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <button id="back-to-home-btn" class="btn btn-secondary back-btn">返回主页</button>
+                </div>
+                <div class="toolbar-right">
+                    <button id="import-students-btn" class="btn btn-secondary">导入学生</button>
+                    <button id="export-class-data-btn" class="btn btn-success">导出表格</button>
+                    <button id="export-class-json-btn" class="btn">导出数据</button>
+                </div>
+            </div>
+            
+            <div class="header">
+                <h1 id="class-name-display"></h1>
+            </div>
+            
+            <div class="section-title">
+                <h2>学生列表 <span id="clear-all-ratings" class="clear-ratings">清空评价</span></h2>
+            </div>
+            
+            <div class="sort-buttons">
+                <button id="sort-by-id" class="btn btn-secondary">按学号排列</button>
+                <button id="sort-by-rating" class="btn btn-secondary">按星级评价排列</button>
+            </div>
+            
+            <div id="student-list" class="student-list"></div>
+            
+            <div class="instructions">
+                <h3>使用说明</h3>
+                <ol>
+                    <li>点击"星级评价"按钮时，可以对每个知识点进行星级评价，5星为满分，知识点名字变为绿色</li>
+                    <li>点击"分数评价"按钮时，可以对每个知识点进行分数评价，5分为满分，知识点名字变为绿色</li>
+                    <li>学生姓名下方的两个分数分别表示星级评价和分数评价的过关知识点数量</li>
+                    <li>点击"按星级评价排列"按钮可以在星级评价和分数评价排序方式之间切换</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- 知识点评价页面 -->
+        <div id="knowledge-page" class="page">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <button id="back-to-class-btn" class="btn btn-secondary back-btn">返回班级</button>
+                </div>
+                <div class="toolbar-right">
+                    <button id="import-knowledge-class-btn" class="btn btn-secondary">导入知识点</button>
+                    <button id="reset-knowledge-btn" class="reset-knowledge-btn">数据初始化</button>
+                    <button id="export-student-data-btn" class="btn btn-success">导出数据</button>
+                </div>
+            </div>
+            
+            <div class="header">
+                <h1 id="student-name-display"></h1>
+            </div>
+            
+            <div class="rating-mode-toggle">
+                <button id="star-mode-btn" class="rating-mode-btn active">星级评价</button>
+                <button id="score-mode-btn" class="rating-mode-btn">分数评价</button>
+            </div>
+            
+            <h2>知识点列表</h2>
+            <div id="knowledge-list" class="knowledge-list"></div>
+        </div>
+    </div>
+    
+    <!-- 添加班级模态框 -->
+    <div id="add-class-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">添加班级</h3>
+            <div class="form-group">
+                <label for="new-class-name">班级名称</label>
+                <input type="text" id="new-class-name" placeholder="请输入班级名称">
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-add-class" class="btn btn-secondary">取消</button>
+                <button id="confirm-add-class" class="btn btn-success">确认</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑班级模态框 -->
+    <div id="edit-class-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">编辑班级</h3>
+            <div class="form-group">
+                <label for="edit-class-name">班级名称</label>
+                <input type="text" id="edit-class-name" placeholder="请输入班级名称">
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-edit-class" class="btn btn-secondary">取消</button>
+                <button id="confirm-edit-class" class="btn btn-success">确认</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 导入知识点模态框 -->
+    <div id="import-knowledge-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">导入知识点</h3>
+            <p>请上传包含知识点的Excel文件，文件应包含两列：序号和内容</p>
+            <div class="form-group">
+                <label for="knowledge-file">选择文件</label>
+                <input type="file" id="knowledge-file" accept=".xlsx, .xls">
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-import-knowledge" class="btn btn-secondary">取消</button>
+                <button id="confirm-import-knowledge" class="btn btn-success">导入</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 导入学生模态框 -->
+    <div id="import-students-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">导入学生</h3>
+            <p>请上传包含学生名单的Excel文件，文件应包含两列：学号和姓名</p>
+            <div class="form-group">
+                <label for="students-file">选择文件</label>
+                <input type="file" id="students-file" accept=".xlsx, .xls">
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-import-students" class="btn btn-secondary">取消</button>
+                <button id="confirm-import-students" class="btn btn-success">导入</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 导入数据模态框 -->
+    <div id="import-data-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">导入数据</h3>
+            <p>请选择之前导出的JSON数据文件</p>
+            <div class="form-group">
+                <label for="data-file">选择文件</label>
+                <input type="file" id="data-file" accept=".json">
+            </div>
+            <div class="modal-footer">
+                <button id="cancel-import-data" class="btn btn-secondary">取消</button>
+                <button id="confirm-import-data" class="btn btn-success">导入</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 导出数据模态框 - 已简化 -->
+    <div id="export-data-modal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">导出数据</h3>
+            <p>数据已导出为JSON文件，请检查下载。</p>
+            <div class="modal-footer">
+                <button id="close-export-data" class="btn btn-secondary">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        // 应用数据
+        const appData = {
+            title: "知识点随抽测小程序",
+            classes: [],
+            knowledge: [],
+            currentClassId: null,
+            currentStudentId: null,
+            ratingMode: 'star', // 'star' or 'score'
+            sortBy: 'id', // 'id', 'star' or 'score'
+            editingClassId: null
+        };
+
+        // DOM元素
+        const elements = {
+            pages: {
+                home: document.getElementById('home-page'),
+                class: document.getElementById('class-page'),
+                knowledge: document.getElementById('knowledge-page')
+            },
+            appTitle: document.getElementById('app-title'),
+            classList: document.getElementById('class-list'),
+            addClassItem: document.getElementById('add-class-item'),
+            studentList: document.getElementById('student-list'),
+            knowledgeList: document.getElementById('knowledge-list'),
+            classNameDisplay: document.getElementById('class-name-display'),
+            studentNameDisplay: document.getElementById('student-name-display'),
+            starModeBtn: document.getElementById('star-mode-btn'),
+            scoreModeBtn: document.getElementById('score-mode-btn'),
+            sortByIdBtn: document.getElementById('sort-by-id'),
+            sortByRatingBtn: document.getElementById('sort-by-rating'),
+            clearAllRatings: document.getElementById('clear-all-ratings'),
+            resetKnowledgeBtn: document.getElementById('reset-knowledge-btn'),
+            modals: {
+                addClass: document.getElementById('add-class-modal'),
+                editClass: document.getElementById('edit-class-modal'),
+                importKnowledge: document.getElementById('import-knowledge-modal'),
+                importStudents: document.getElementById('import-students-modal'),
+                importData: document.getElementById('import-data-modal'),
+                exportData: document.getElementById('export-data-modal')
+            },
+            modalInputs: {
+                newClassName: document.getElementById('new-class-name'),
+                editClassName: document.getElementById('edit-class-name'),
+                knowledgeFile: document.getElementById('knowledge-file'),
+                studentsFile: document.getElementById('students-file'),
+                dataFile: document.getElementById('data-file'),
+                exportDataContent: document.getElementById('export-data-content')
+            },
+            buttons: {
+                importKnowledge: document.getElementById('import-knowledge-btn'),
+                resetAllData: document.getElementById('reset-all-data-btn'),
+                exportData: document.getElementById('export-data-btn'),
+                importData: document.getElementById('import-data-btn'),
+                backToHome: document.getElementById('back-to-home-btn'),
+                backToClass: document.getElementById('back-to-class-btn'),
+                importStudents: document.getElementById('import-students-btn'),
+                exportClassData: document.getElementById('export-class-data-btn'),
+                exportClassJson: document.getElementById('export-class-json-btn'),
+                exportStudentData: document.getElementById('export-student-data-btn'),
+                importKnowledgeClass: document.getElementById('import-knowledge-class-btn'),
+                cancelAddClass: document.getElementById('cancel-add-class'),
+                confirmAddClass: document.getElementById('confirm-add-class'),
+                cancelEditClass: document.getElementById('cancel-edit-class'),
+                confirmEditClass: document.getElementById('confirm-edit-class'),
+                cancelImportKnowledge: document.getElementById('cancel-import-knowledge'),
+                confirmImportKnowledge: document.getElementById('confirm-import-knowledge'),
+                cancelImportStudents: document.getElementById('cancel-import-students'),
+                confirmImportStudents: document.getElementById('confirm-import-students'),
+                cancelImportData: document.getElementById('cancel-import-data'),
+                confirmImportData: document.getElementById('confirm-import-data'),
+                downloadExportData: document.getElementById('download-export-data'),
+                closeExportData: document.getElementById('close-export-data')
+            }
+        };
+
+        // 初始化应用
+        function initApp() {
+            loadData();
+            setupEventListeners();
+            renderHomePage();
+        }
+
+        // 加载数据
+        function loadData() {
+            const savedData = localStorage.getItem('knowledgeTestAppData');
+            if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                Object.assign(appData, parsedData);
+                elements.appTitle.value = appData.title;
+            }
+        }
+
+        // 保存数据
+        function saveData() {
+            localStorage.setItem('knowledgeTestAppData', JSON.stringify(appData));
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 标题修改
+            elements.appTitle.addEventListener('change', function() {
+                appData.title = this.value;
+                saveData();
+            });
+
+            // 添加班级
+            elements.addClassItem.addEventListener('click', showAddClassModal);
+            elements.buttons.cancelAddClass.addEventListener('click', hideAddClassModal);
+            elements.buttons.confirmAddClass.addEventListener('click', addNewClass);
+
+            // 编辑班级
+            elements.buttons.cancelEditClass.addEventListener('click', hideEditClassModal);
+            elements.buttons.confirmEditClass.addEventListener('click', updateClassName);
+
+            // 初始化所有数据
+            elements.buttons.resetAllData.addEventListener('click', resetAllData);
+
+            // 导入知识点
+            elements.buttons.importKnowledge.addEventListener('click', showImportKnowledgeModal);
+            elements.buttons.importKnowledgeClass.addEventListener('click', showImportKnowledgeModal);
+            elements.buttons.cancelImportKnowledge.addEventListener('click', hideImportKnowledgeModal);
+            elements.buttons.confirmImportKnowledge.addEventListener('click', importKnowledgeFromFile);
+
+            // 导入学生
+            elements.buttons.importStudents.addEventListener('click', showImportStudentsModal);
+            elements.buttons.cancelImportStudents.addEventListener('click', hideImportStudentsModal);
+            elements.buttons.confirmImportStudents.addEventListener('click', importStudentsFromFile);
+
+            // 数据导入导出
+            elements.buttons.exportData.addEventListener('click', exportDataToFile);
+            elements.buttons.importData.addEventListener('click', showImportDataModal);
+            elements.buttons.exportClassJson.addEventListener('click', exportDataToFile);
+            elements.buttons.exportStudentData.addEventListener('click', exportDataToFile);
+            elements.buttons.cancelImportData.addEventListener('click', hideImportDataModal);
+            elements.buttons.confirmImportData.addEventListener('click', importDataFromFile);
+            elements.buttons.closeExportData.addEventListener('click', hideExportDataModal);
+
+            // 导出班级表格
+            elements.buttons.exportClassData.addEventListener('click', exportClassDataToExcel);
+
+            // 页面导航
+            elements.buttons.backToHome.addEventListener('click', renderHomePage);
+            elements.buttons.backToClass.addEventListener('click', renderClassPage);
+
+            // 评分模式切换
+            elements.starModeBtn.addEventListener('click', function() {
+                appData.ratingMode = 'star';
+                this.classList.add('active');
+                elements.scoreModeBtn.classList.remove('active');
+                renderKnowledgePage();
+            });
+            elements.scoreModeBtn.addEventListener('click', function() {
+                appData.ratingMode = 'score';
+                this.classList.add('active');
+                elements.starModeBtn.classList.remove('active');
+                renderKnowledgePage();
+            });
+
+            // 排序方式切换
+            elements.sortByIdBtn.addEventListener('click', function() {
+                appData.sortBy = 'id';
+                renderClassPage();
+            });
+            elements.sortByRatingBtn.addEventListener('click', function() {
+                if (appData.sortBy === 'id') {
+                    appData.sortBy = 'star';
+                    this.textContent = '按星级评价排列';
+                } else if (appData.sortBy === 'star') {
+                    appData.sortBy = 'score';
+                    this.textContent = '按分数评价排列';
+                } else {
+                    appData.sortBy = 'id';
+                    this.textContent = '按星级评价排列';
+                }
+                renderClassPage();
+            });
+
+            // 清空所有评价
+            elements.clearAllRatings.addEventListener('click', clearAllRatings);
+
+            // 重置知识点
+            elements.resetKnowledgeBtn.addEventListener('click', resetKnowledge);
+        }
+
+        // 显示添加班级模态框
+        function showAddClassModal() {
+            elements.modalInputs.newClassName.value = '';
+            elements.modals.addClass.style.display = 'flex';
+        }
+
+        // 隐藏添加班级模态框
+        function hideAddClassModal() {
+            elements.modals.addClass.style.display = 'none';
+        }
+
+        // 显示编辑班级模态框
+        function showEditClassModal(classId) {
+            const classItem = appData.classes.find(c => c.id === classId);
+            if (!classItem) return;
+            
+            appData.editingClassId = classId;
+            elements.modalInputs.editClassName.value = classItem.name;
+            elements.modals.editClass.style.display = 'flex';
+        }
+
+        // 隐藏编辑班级模态框
+        function hideEditClassModal() {
+            elements.modals.editClass.style.display = 'none';
+            appData.editingClassId = null;
+        }
+
+        // 添加新班级
+        function addNewClass() {
+            const className = elements.modalInputs.newClassName.value.trim();
+            if (!className) return;
+
+            const newClass = {
+                id: Date.now().toString(),
+                name: className,
+                students: [],
+                knowledge: []
+            };
+
+            appData.classes.push(newClass);
+            saveData();
+            hideAddClassModal();
+            renderHomePage();
+        }
+
+        // 更新班级名称
+        function updateClassName() {
+            const className = elements.modalInputs.editClassName.value.trim();
+            if (!className || !appData.editingClassId) return;
+
+            const classItem = appData.classes.find(c => c.id === appData.editingClassId);
+            if (classItem) {
+                classItem.name = className;
+                saveData();
+                hideEditClassModal();
+                renderHomePage();
+            }
+        }
+
+        // 删除班级
+        function deleteClass(classId) {
+            if (!confirm('确定要删除这个班级吗？此操作将删除所有相关数据且不可恢复！')) return;
+            
+            appData.classes = appData.classes.filter(c => c.id !== classId);
+            saveData();
+            renderHomePage();
+        }
+
+        // 重置所有数据
+        function resetAllData() {
+            if (!confirm('确定要初始化所有数据吗？这将清空所有班级、学生和知识点数据，此操作不可撤销！')) return;
+            
+            appData.classes = [];
+            appData.knowledge = [];
+            appData.currentClassId = null;
+            appData.currentStudentId = null;
+            saveData();
+            renderHomePage();
+        }
+
+        // 显示导入知识点模态框
+        function showImportKnowledgeModal() {
+            elements.modalInputs.knowledgeFile.value = '';
+            elements.modals.importKnowledge.style.display = 'flex';
+        }
+
+        // 隐藏导入知识点模态框
+        function hideImportKnowledgeModal() {
+            elements.modals.importKnowledge.style.display = 'none';
+        }
+
+        // 导入知识点
+        function importKnowledgeFromFile() {
+            const file = elements.modalInputs.knowledgeFile.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                    
+                    const knowledgeItems = jsonData.map(item => ({
+                        id: item['序号']?.toString() || Date.now().toString(),
+                        content: item['内容']?.toString() || '',
+                        ratings: {}
+                    }));
+
+                    if (appData.currentClassId) {
+                        // 在知识点页面导入，只添加到当前班级
+                        const currentClass = appData.classes.find(c => c.id === appData.currentClassId);
+                        if (currentClass) {
+                            currentClass.knowledge = knowledgeItems;
+                            saveData();
+                            renderKnowledgePage();
+                        }
+                    } else {
+                        // 在主页导入，添加到全局知识点
+                        appData.knowledge = knowledgeItems;
+                        saveData();
+                    }
+
+                    hideImportKnowledgeModal();
+                    alert('知识点导入成功！');
+                } catch (error) {
+                    alert('导入失败，请检查文件格式是否正确。');
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 显示导入学生模态框
+        function showImportStudentsModal() {
+            elements.modalInputs.studentsFile.value = '';
+            elements.modals.importStudents.style.display = 'flex';
+        }
+
+        // 隐藏导入学生模态框
+        function hideImportStudentsModal() {
+            elements.modals.importStudents.style.display = 'none';
+        }
+
+        // 导入学生
+        function importStudentsFromFile() {
+            const file = elements.modalInputs.studentsFile.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                    
+                    const currentClass = appData.classes.find(c => c.id === appData.currentClassId);
+                    if (currentClass) {
+                        currentClass.students = jsonData.map(item => ({
+                            id: item['学号']?.toString() || Date.now().toString(),
+                            name: item['姓名']?.toString() || '',
+                            studentId: item['学号']?.toString() || ''
+                        }));
+                        
+                        saveData();
+                        renderClassPage();
+                        hideImportStudentsModal();
+                        alert('学生名单导入成功！');
+                    }
+                } catch (error) {
+                    alert('导入失败，请检查文件格式是否正确。');
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 显示导入数据模态框
+        function showImportDataModal() {
+            elements.modalInputs.dataFile.value = '';
+            elements.modals.importData.style.display = 'flex';
+        }
+
+        // 隐藏导入数据模态框
+        function hideImportDataModal() {
+            elements.modals.importData.style.display = 'none';
+        }
+
+        // 导入数据
+        function importDataFromFile() {
+            const file = elements.modalInputs.dataFile.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    Object.assign(appData, data);
+                    elements.appTitle.value = appData.title;
+                    saveData();
+                    
+                    if (elements.pages.class.classList.contains('active')) {
+                        renderClassPage();
+                    } else if (elements.pages.knowledge.classList.contains('active')) {
+                        renderKnowledgePage();
+                    } else {
+                        renderHomePage();
+                    }
+                    
+                    hideImportDataModal();
+                    alert('数据导入成功！');
+                } catch (error) {
+                    alert('导入失败，请检查文件格式是否正确。');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 导出数据为JSON文件
+        function exportDataToFile() {
+            const dataStr = JSON.stringify(appData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `知识点抽测数据_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            // 显示导出完成提示
+            elements.modals.exportData.style.display = 'flex';
+        }
+
+        // 隐藏导出数据模态框
+        function hideExportDataModal() {
+            elements.modals.exportData.style.display = 'none';
+        }
+
+        // 计算学生掌握程度
+        function calculateStudentMastery(studentId) {
+            const currentClass = appData.classes.find(c => c.id === appData.currentClassId);
+            if (!currentClass) return { 
+                star: { perfect: 0, total: 0, percentage: 0, totalScore: 0, maxPossible: 0 },
+                score: { perfect: 0, total: 0, percentage: 0, totalScore: 0, maxPossible: 0 }
+            };
+            
+            const knowledge = currentClass.knowledge.length > 0 ? currentClass.knowledge : appData.knowledge;
+            
+            let starStats = { perfect: 0, totalScore: 0, maxPossible: knowledge.length * 5 };
+            let scoreStats = { perfect: 0, totalScore: 0, maxPossible: knowledge.length * 5 };
+            
+            knowledge.forEach(item => {
+                const rating = item.ratings?.[studentId] || {};
+                
+                // 星级评价
+                const starValue = rating.stars || 0;
+                starStats.totalScore += Number(starValue) || 0;
+                if (starValue === 5) starStats.perfect++;
+                
+                // 分数评价
+                const scoreValue = rating.score || 0;
+                scoreStats.totalScore += Number(scoreValue) || 0;
+                if (scoreValue === 5) scoreStats.perfect++;
+            });
+            
+            return {
+                star: {
+                    perfect: starStats.perfect,
+                    total: knowledge.length,
+                    percentage: knowledge.length > 0 ? (starStats.perfect / knowledge.length) : 0,
+                    totalScore: starStats.totalScore,
+                    maxPossible: starStats.maxPossible,
+                    scorePercentage: starStats.maxPossible > 0 ? (starStats.totalScore / starStats.maxPossible) : 0
+                },
+                score: {
+                    perfect: scoreStats.perfect,
+                    total: knowledge.length,
+                    percentage: knowledge.length > 0 ? (scoreStats.perfect / knowledge.length) : 0,
+                    totalScore: scoreStats.totalScore,
+                    maxPossible: scoreStats.maxPossible,
+                    scorePercentage: scoreStats.maxPossible > 0 ? (scoreStats.totalScore / scoreStats.maxPossible) : 0
+                }
+            };
+        }
+
+        // 渲染主页
+        function renderHomePage() {
+            // 切换页面
+            Object.values(elements.pages).forEach(page => page.classList.remove('active'));
+            elements.pages.home.classList.add('active');
+            
+            // 渲染班级列表
+            elements.classList.innerHTML = '';
+            elements.classList.appendChild(elements.addClassItem);
+            
+            appData.classes.forEach(classItem => {
+                const classElement = document.createElement('div');
+                classElement.className = 'class-item';
+                classElement.textContent = classItem.name;
+                classElement.addEventListener('click', () => {
+                    appData.currentClassId = classItem.id;
+                    renderClassPage();
+                });
+                
+                // 添加编辑和删除按钮
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'class-actions';
+                
+                const editBtn = document.createElement('button');
+                editBtn.className = 'class-edit';
+                editBtn.textContent = '编辑';
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showEditClassModal(classItem.id);
+                });
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'class-delete';
+                deleteBtn.textContent = '删除';
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteClass(classItem.id);
+                });
+                
+                actionsDiv.appendChild(editBtn);
+                actionsDiv.appendChild(deleteBtn);
+                classElement.appendChild(actionsDiv);
+                
+                elements.classList.appendChild(classElement);
+            });
+        }
+
+        // 渲染班级页面
+        function renderClassPage() {
+            const currentClass = appData.classes.find(c => c.id === appData.currentClassId);
+            if (!currentClass) {
+                renderHomePage();
+                return;
+            }
+
+            // 切换页面
+            Object.values(elements.pages).forEach(page => page.classList.remove('active'));
+            elements.pages.class.classList.add('active');
+            
+            // 显示班级名称
+            elements.classNameDisplay.textContent = currentClass.name;
+            
+            // 设置排序按钮状态
+            elements.sortByIdBtn.classList.toggle('active', appData.sortBy === 'id');
+            elements.sortByRatingBtn.classList.toggle('active', appData.sortBy === 'star' || appData.sortBy === 'score');
+            
+            // 渲染学生列表
+            elements.studentList.innerHTML = '';
+            
+            // 排序学生
+            let sortedStudents = [...currentClass.students];
+            
+            if (appData.sortBy === 'id') {
+                // 按学号排序
+                sortedStudents.sort((a, b) => {
+                    const aNum = parseInt(a.studentId) || 0;
+                    const bNum = parseInt(b.studentId) || 0;
+                    return aNum - bNum;
+                });
+            } else {
+                // 按评价排序
+                const ratingType = appData.sortBy;
+                sortedStudents.sort((a, b) => {
+                    const aMastery = calculateStudentMastery(a.id)[ratingType];
+                    const bMastery = calculateStudentMastery(b.id)[ratingType];
+                    return bMastery.totalScore - aMastery.totalScore;
+                });
+            }
+            
+            sortedStudents.forEach(student => {
+                const mastery = calculateStudentMastery(student.id);
+                const starMastery = mastery.star;
+                const scoreMastery = mastery.score;
+                
+                // 根据两种评价的综合结果确定颜色
+                let className = 'none';
+                if (starMastery.total > 0 || scoreMastery.total > 0) {
+                    const starPerfect = starMastery.percentage === 1;
+                    const scorePerfect = scoreMastery.percentage === 1;
+                    const starGood = starMastery.scorePercentage >= 0.8;
+                    const scoreGood = scoreMastery.scorePercentage >= 0.8;
+                    const starPoor = starMastery.scorePercentage > 0 && starMastery.scorePercentage < 0.5;
+                    const scorePoor = scoreMastery.scorePercentage > 0 && scoreMastery.scorePercentage < 0.5;
+                    
+                    if (starPerfect || scorePerfect) {
+                        className = 'perfect';
+                    } else if (starGood || scoreGood) {
+                        className = 'good';
+                    } else if (starPoor || scorePoor) {
+                        className = 'poor';
+                    }
+                }
+                
+                const studentElement = document.createElement('div');
+                studentElement.className = `student-item ${className}`;
+                
+                const nameElement = document.createElement('div');
+                nameElement.textContent = `${student.studentId} ${student.name}`;
+                studentElement.appendChild(nameElement);
+                
+                const scoresElement = document.createElement('div');
+                scoresElement.className = 'student-scores';
+                
+                const starScoreElement = document.createElement('div');
+                starScoreElement.className = 'star-score';
+                starScoreElement.textContent = `星级: ${starMastery.perfect}/${starMastery.total}`;
+                starScoreElement.title = `星级评价: ${starMastery.perfect}个满分 (${(starMastery.percentage * 100).toFixed(1)}%)`;
+                scoresElement.appendChild(starScoreElement);
+                
+                const pointScoreElement = document.createElement('div');
+                pointScoreElement.className = 'point-score';
+                pointScoreElement.textContent = `分数: ${scoreMastery.perfect}/${scoreMastery.total}`;
+                pointScoreElement.title = `分数评价: ${scoreMastery.perfect}个满分 (${(scoreMastery.percentage * 100).toFixed(1)}%)`;
+                scoresElement.appendChild(pointScoreElement);
+                
+                studentElement.appendChild(scoresElement);
+                
+                studentElement.addEventListener('click', () => {
+                    appData.currentStudentId = student.id;
+                    renderKnowledgePage();
+                });
+                
+                elements.studentList.appendChild(studentElement);
+            });
+        }
+
+        // 渲染知识点页面
+        function renderKnowledgePage() {
+            const currentClass = appData.classes.find(c => c.id === appData.currentClassId);
+            const currentStudent = currentClass?.students.find(s => s.id === appData.currentStudentId);
+            if (!currentClass || !currentStudent) {
+                renderClassPage();
+                return;
+            }
+
+            // 切换页面
+            Object.values(elements.pages).forEach(page => page.classList.remove('active'));
+            elements.pages.knowledge.classList.add('active');
+            
+            // 显示学生姓名
+            elements.studentNameDisplay.textContent = `${currentStudent.studentId} ${currentStudent.name}`;
+            
+            // 设置评分模式按钮状态
+            elements.starModeBtn.classList.toggle('active', appData.ratingMode === 'star');
+            elements.scoreModeBtn.classList.toggle('active', appData.ratingMode === 'score');
+            
+            // 渲染知识点列表
+            elements.knowledgeList.innerHTML = '';
+            
+            const knowledgeItems = currentClass.knowledge.length > 0 ? currentClass.knowledge : appData.knowledge;
+            
+            knowledgeItems.forEach(item => {
+                const rating = item.ratings?.[currentStudent.id] || {};
+                const isStarPerfect = (rating.stars === 5);
+                const isScorePerfect = (rating.score === 5);
+                const isPerfect = (appData.ratingMode === 'star' ? isStarPerfect : isScorePerfect);
+                
+                const itemElement = document.createElement('div');
+                itemElement.className = `knowledge-item ${isPerfect ? 'perfect' : ''}`;
+                
+                const contentElement = document.createElement('div');
+                contentElement.className = 'knowledge-content';
+                contentElement.textContent = item.content;
+                itemElement.appendChild(contentElement);
+                
+                if (appData.ratingMode === 'star') {
+                    // 星级评价
+                    const starsElement = document.createElement('div');
+                    starsElement.className = 'rating-stars';
+                    
+                    for (let i = 1; i <= 5; i++) {
+                        const starElement = document.createElement('span');
+                        starElement.className = `star ${i <= (rating.stars || 0) ? 'filled' : ''}`;
+                        starElement.innerHTML = '★';
+                        starElement.addEventListener('click', () => toggleStarRating(item, currentStudent.id, i));
+                        starsElement.appendChild(starElement);
+                    }
+                    
+                    itemElement.appendChild(starsElement);
+                } else {
+                    // 分数评价
+                    const numbersElement = document.createElement('div');
+                    numbersElement.className = 'rating-numbers';
+                    
+                    for (let i = 1; i <= 5; i++) {
+                        const numberElement = document.createElement('div');
+                        numberElement.className = `rating-number ${i === rating.score ? 'selected' : ''}`;
+                        numberElement.textContent = i;
+                        numberElement.addEventListener('click', () => toggleScoreRating(item, currentStudent.id, i));
+                        numbersElement.appendChild(numberElement);
+                    }
+                    
+                    itemElement.appendChild(numbersElement);
+                }
+                
+                elements.knowledgeList.appendChild(itemElement);
+            });
+        }
+
+        // 切换星级评价
+        function toggleStarRating(knowledgeItem, studentId, stars) {
+            if (!knowledgeItem.ratings) knowledgeItem.ratings = {};
+            
+            const currentRating = knowledgeItem.ratings[studentId] || {};
+            
+            if (currentRating.stars === stars) {
+                // 点击相同的星，取消选择
+                delete currentRating.stars;
+            } else {
+                // 选择新的星级
+                currentRating.stars = stars;
+            }
+            
+            // 更新评分数据
+            knowledgeItem.ratings[studentId] = currentRating;
+            
+            // 如果评分对象为空，则删除
+            if (Object.keys(currentRating).length === 0) {
+                delete knowledgeItem.ratings[studentId];
+            }
+            
+            saveData();
+            renderKnowledgePage();
+        }
+
+        // 切换分数评价
+        function toggleScoreRating(knowledgeItem, studentId, score) {
+            if (!knowledgeItem.ratings) knowledgeItem.ratings = {};
+            
+            const currentRating = knowledgeItem.ratings[studentId] || {};
+            
+            if (currentRating.score === score) {
+                // 点击相同的分数，取消选择
+                delete currentRating.score;
+            } else {
+                // 选择新的分数
+                currentRating.score = score;
+            }
+            
+            // 更新评分数据
+            knowledgeItem.ratings[studentId] = currentRating;
+            
+            // 如果评分对象为空，则删除
+            if (Object.keys(currentRating).length === 0) {
+                delete knowledgeItem.ratings[studentId];
+            }
+            
+            saveData();
+            renderKnowledgePage();
+        }
+
+        // 清空所有学生的评价数据
+        function clearAllRatings() {
+            if (!confirm('确定要清空所有学生的评价数据吗？此操作不可撤销！')) return;
+            
+            const currentClass = appData.classes.find(c => c.id === appData.currentClassId);
+            if (!currentClass) return;
+
+            const knowledge = currentClass.knowledge.length > 0 ? currentClass.knowledge : appData.knowledge;
+            
+            knowledge.forEach(item => {
+                item.ratings = {};
+            });
+            
+            saveData();
+            renderClassPage();
+        }
+
+        // 重置知识点数据
+        function resetKnowledge() {
+            if (!confirm('确定要重置知识点数据吗？当前所有知识点将被清空，此操作不可撤销！')) return;
+            
+            const currentClass = appData.classes.find(c => c.id === appData.currentClassId);
+            if (!currentClass) return;
+
+            currentClass.knowledge = [];
+            saveData();
+            renderKnowledgePage();
+        }
+
+        // 导出班级数据到Excel
+        function exportClassDataToExcel() {
+            const currentClass = appData.classes.find(c => c.id === appData.currentClassId);
+            if (!currentClass) return;
+
+            // 学生知识点数据表
+            const studentData = currentClass.students.map(student => {
+                const row = {
+                    '学号': student.studentId,
+                    '姓名': student.name
+                };
+                
+                const knowledge = currentClass.knowledge.length > 0 ? currentClass.knowledge : appData.knowledge;
+                knowledge.forEach(item => {
+                    const rating = item.ratings?.[student.id] || {};
+                    row[`${item.content} (星级)`] = rating.stars || '';
+                    row[`${item.content} (分数)`] = rating.score || '';
+                });
+                
+                return row;
+            });
+
+            // 星级评价优秀学生
+            const starTopStudents = currentClass.students.map(student => {
+                let starTotal = 0;
+                let starPerfect = 0;
+                
+                const knowledge = currentClass.knowledge.length > 0 ? currentClass.knowledge : appData.knowledge;
+                knowledge.forEach(item => {
+                    const rating = item.ratings?.[student.id] || {};
+                    const starValue = rating.stars || 0;
+                    starTotal += Number(starValue) || 0;
+                    if (starValue === 5) starPerfect++;
+                });
+                
+                return {
+                    '学号': student.studentId,
+                    '姓名': student.name,
+                    '星级总分': starTotal,
+                    '星级满分知识点数': starPerfect,
+                    '星级满分率': knowledge.length > 0 ? (starPerfect / knowledge.length * 100).toFixed(2) + '%' : '0%'
+                };
+            }).sort((a, b) => b.星级总分 - a.星级总分);
+
+            // 分数评价优秀学生
+            const scoreTopStudents = currentClass.students.map(student => {
+                let scoreTotal = 0;
+                let scorePerfect = 0;
+                
+                const knowledge = currentClass.knowledge.length > 0 ? currentClass.knowledge : appData.knowledge;
+                knowledge.forEach(item => {
+                    const rating = item.ratings?.[student.id] || {};
+                    const scoreValue = rating.score || 0;
+                    scoreTotal += Number(scoreValue) || 0;
+                    if (scoreValue === 5) scorePerfect++;
+                });
+                
+                return {
+                    '学号': student.studentId,
+                    '姓名': student.name,
+                    '分数总分': scoreTotal,
+                    '分数满分知识点数': scorePerfect,
+                    '分数满分率': knowledge.length > 0 ? (scorePerfect / knowledge.length * 100).toFixed(2) + '%' : '0%'
+                };
+            }).sort((a, b) => b.分数总分 - a.分数总分);
+
+            // 需关注学生 (通过率低于60%)
+            const attentionStudents = currentClass.students.map(student => {
+                let starPassed = 0; // 4星或以上为通过
+                let scorePassed = 0; // 4分或以上为通过
+                
+                const knowledge = currentClass.knowledge.length > 0 ? currentClass.knowledge : appData.knowledge;
+                knowledge.forEach(item => {
+                    const rating = item.ratings?.[student.id] || {};
+                    if (rating.stars >= 4) starPassed++;
+                    if (rating.score >= 4) scorePassed++;
+                });
+                
+                const starPassRate = knowledge.length > 0 ? (starPassed / knowledge.length * 100).toFixed(2) + '%' : '0%';
+                const scorePassRate = knowledge.length > 0 ? (scorePassed / knowledge.length * 100).toFixed(2) + '%' : '0%';
+                
+                return {
+                    '学号': student.studentId,
+                    '姓名': student.name,
+                    '星级通过数': starPassed,
+                    '星级通过率': starPassRate,
+                    '分数通过数': scorePassed,
+                    '分数通过率': scorePassRate,
+                    '需关注原因': parseFloat(starPassRate) < 60 ? '星级评价未达标' : 
+                                  parseFloat(scorePassRate) < 60 ? '分数评价未达标' : '达标'
+                };
+            }).filter(s => parseFloat(s.星级通过率) < 60 || parseFloat(s.分数通过率) < 60)
+              .sort((a, b) => Math.min(parseFloat(a.星级通过率), parseFloat(a.分数通过率)) - 
+                              Math.min(parseFloat(b.星级通过率), parseFloat(b.分数通过率)));
+
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            
+            // 添加工作表
+            XLSX.utils.book_append_sheet(wb, 
+                XLSX.utils.json_to_sheet(studentData), 
+                '学生知识点数据');
+                
+            XLSX.utils.book_append_sheet(wb, 
+                XLSX.utils.json_to_sheet(starTopStudents), 
+                '星级评价优秀学生');
+                
+            XLSX.utils.book_append_sheet(wb, 
+                XLSX.utils.json_to_sheet(scoreTopStudents), 
+                '分数评价优秀学生');
+                
+            XLSX.utils.book_append_sheet(wb, 
+                XLSX.utils.json_to_sheet(attentionStudents), 
+                '需关注学生');
+
+            // 导出文件
+            XLSX.writeFile(wb, `${currentClass.name}知识点测评数据.xlsx`);
+        }
+
+        // 初始化应用
+        initApp();
+    </script>
+</body>
+</html>

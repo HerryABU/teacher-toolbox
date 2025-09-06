@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>特别鸣谢 - 开源教师工具箱</title>
+  <!-- 样式保持不变 -->
+  <style>
+    /* 保持原有所有样式不变 */
+    body, html { margin: 0; padding: 0; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; min-height: 100vh; display: flex; flex-direction: column; background-color: #f9f9fb; }
+    #app { flex: 1; padding: 40px 20px; }
+    .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+    h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; font-size: 28px; }
+    .thank-card { margin-bottom: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); transition: transform 0.3s ease; background: white; }
+    .thank-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); }
+    .thank-header { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; padding: 16px 20px; font-weight: bold; border-radius: 12px 12px 0 0; }
+    .thank-body { padding: 20px; }
+    .thank-role { font-weight: 600; color: #1f2d3d; margin-bottom: 8px; }
+    .thank-contribution { color: #666; line-height: 1.8; }
+    .loading-spinner { display: flex; justify-content: center; margin: 30px 0; }
+    .error-tip { text-align: center; color: #e74c3c; font-size: 16px; margin: 30px 0; padding: 20px; background: #ffeeee; border-radius: 8px; }
+    .empty-tip { text-align: center; color: #7f8c8d; font-size: 16px; margin: 30px 0; padding: 20px; background: #f8f8f8; border-radius: 8px; }
+    footer { text-align: center; padding: 18px; color: #7f8c8d; font-size: 14px; background-color: #f8f8f8; border-top: 1px solid #eee; margin-top: auto; }
+    @media (max-width: 600px) { h1 { font-size: 24px; } .container { padding: 0 16px; } }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="container">
+      <h1>✨ 特别鸣谢</h1>
+
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-spinner">
+        <div class="spinner">加载中...</div>
+      </div>
+
+      <!-- 显示鸣谢列表 -->
+      <div v-else-if="!error && thanksData.length > 0">
+        <div v-for="person in thanksData" :key="person.name" class="thank-card">
+          <div class="thank-header">
+            ★ {{ person.name }}
+          </div>
+          <div class="thank-body">
+            <p class="thank-role">角色：{{ person.role }}</p>
+            <p class="thank-contribution">贡献：{{ person.contribution }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 数据为空状态 -->
+      <div v-else-if="!loading && !error" class="empty-tip">
+        暂无鸣谢信息
+      </div>
+
+      <!-- 错误状态 -->
+      <div v-else class="error-tip">
+        {{ error || '加载鸣谢信息时出错' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- 页脚 -->
+  <footer id="dynamic-footer">
+    © <span id="current-year"></span> 开源教师工具箱 · 感谢每一位贡献者
+  </footer>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script>
+    // 动态设置年份
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+
+    const { createApp, ref, onMounted } = Vue;
+    
+    createApp({
+      setup() {
+        const thanksData = ref([]); // 初始为空数组
+        const loading = ref(true);
+        const error = ref('');
+
+        onMounted(async () => {
+          try {
+            const response = await fetch('./thanks-data.json');
+            if (!response.ok) {
+              throw new Error(`HTTP错误! 状态码: ${response.status}`);
+            }
+            thanksData.value = await response.json();
+          } catch (err) {
+            console.error('加载鸣谢数据失败:', err);
+            error.value = '无法加载鸣谢数据: ' + err.message;
+          } finally {
+            loading.value = false;
+          }
+        });
+
+        return { thanksData, loading, error };
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "tools": [
+    {
+      "id": "activity_registration",
+      "name": "活动报名",
+      "description": "管理学生活动报名情况，支持报名统计",
+      "icon": "Calendar",
+      "path": "./tools/activity_registration/index.html"
+    },
+    {
+      "id": "excellence_award",
+      "name": "评优评先",
+      "description": "管理学生评优评先活动，支持多维度评价",
+      "icon": "Medal",
+      "path": "./tools/excellence_award/index.html"
+    },
+    {
+      "id": "task_assignment",
+      "name": "任务分配",
+      "description": "分配和跟踪学生任务完成情况，支持进度管理",
+      "icon": "List",
+      "path": "./tools/task_assignment/index.html"
+    }
+  ]
+}

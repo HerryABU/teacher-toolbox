@@ -1,0 +1,2223 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>课堂加分系统</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --info-color: #9b59b6;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --gray-color: #95a5a6;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            transition: all 0.3s;
+        }
+        
+        /* 登录界面样式 */
+        .login-container {
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .login-title {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: var(--dark-color);
+        }
+        
+        .subject-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        
+        .subject-item {
+            padding: 12px;
+            margin: 5px 0;
+            background-color: var(--light-color);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .subject-item:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .subject-item.selected {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .add-subject {
+            display: flex;
+            margin-top: 15px;
+        }
+        
+        .add-subject input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px 0 0 5px;
+        }
+        
+        .add-subject button {
+            padding: 10px 15px;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+        }
+        
+        .login-section {
+            margin-top: 20px;
+        }
+        
+        .login-section input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .login-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .reset-password {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background-color: var(--light-color);
+            border-radius: 5px;
+        }
+        
+        .register-form {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background-color: var(--light-color);
+            border-radius: 5px;
+        }
+        
+        .login-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .login-actions button {
+            flex: 1;
+        }
+        
+        /* 主界面样式 */
+        .main-container {
+            display: none;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            transition: all 0.3s;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .title-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .class-slogan {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: var(--light-color);
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .date {
+            font-size: 16px;
+            color: #666;
+            white-space: nowrap;
+        }
+        
+        .teacher-comment {
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .class-evaluation {
+            margin-bottom: 10px;
+        }
+        
+        .evaluation-label {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .evaluation-options {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .evaluation-option {
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+        
+        .evaluation-option.selected {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .teacher-comment textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        
+        .teacher-comment .comment-hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .teacher-comment button {
+            margin-top: 5px;
+        }
+        
+        .control-panel {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .students-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            overflow-y: auto;
+            max-height: calc(100vh - 400px);
+        }
+        
+        .student-row {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .student-card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: calc(10% - 15px);
+            min-width: 150px;
+            position: relative;
+            flex: 1;
+        }
+        
+        .student-id {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .student-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .student-score-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        
+        .score-positive {
+            color: var(--success-color);
+            font-weight: bold;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .score-negative {
+            color: var(--danger-color);
+            font-weight: bold;
+            text-align: center;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .student-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .btn-positive {
+            background-color: var(--success-color);
+        }
+        
+        .btn-negative {
+            background-color: var(--danger-color);
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+        }
+        
+        .btn-info {
+            background-color: var(--info-color);
+        }
+        
+        .btn-dark {
+            background-color: var(--dark-color);
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .score-summary {
+            font-size: 12px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed #eee;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .summary-label {
+            color: #666;
+        }
+        
+        .summary-value {
+            font-weight: bold;
+        }
+        
+        .reset-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+        }
+        
+        /* 班主任视图样式 */
+        .teacher-scores {
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        .teacher-score-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+        
+        .teacher-name {
+            color: #666;
+        }
+        
+        .teacher-positive {
+            color: var(--success-color);
+        }
+        
+        .teacher-negative {
+            color: var(--danger-color);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .student-card {
+                width: calc(100% - 15px);
+            }
+            
+            .students-container {
+                max-height: calc(100vh - 450px);
+            }
+            
+            .login-container {
+                margin: 20px;
+                padding: 20px;
+            }
+        }
+        
+        /* 横屏模式 */
+        .landscape {
+            max-width: 100%;
+            padding: 10px;
+        }
+        
+        .landscape .student-card {
+            width: calc(6.66% - 10px);
+            min-width: 100px;
+            padding: 10px;
+        }
+        
+        /* 班主任编辑样式 */
+        .slogan-editor {
+            display: none;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: var(--light-color);
+            border-radius: 5px;
+        }
+        
+        .instructions {
+            background-color: var(--light-color);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .instructions-edit {
+            display: none;
+            margin-top: 10px;
+        }
+        
+        .instructions-textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .slogan-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .color-picker {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border: 1px solid #ddd;
+        }
+        
+        /* 导出提示 */
+        .export-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+        }
+        
+        /* 密码错误提示 */
+        .error-message {
+            color: var(--danger-color);
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: none;
+        }
+        
+        /* 班主任管理面板 */
+        .admin-panel {
+            display: none;
+            background-color: var(--light-color);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        
+        .admin-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        /* 新增样式 */
+        .class-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--dark-color);
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: var(--light-color);
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            padding: 10px;
+            border-top: 1px solid #eee;
+        }
+
+        .login-instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--light-color);
+            border-radius: 5px;
+            font-size: 14px;
+            line-height: 1.6;
+            text-align: left;
+        }
+
+        .login-instructions h3 {
+            margin-top: 0;
+            color: var(--dark-color);
+        }
+
+        .login-instructions ol {
+            padding-left: 20px;
+            margin-bottom: 0;
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        /* 文件选择按钮样式 */
+        .file-select-btn {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: var(--info-color);
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        
+        /* 评价记录样式 */
+        .evaluation-records {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+        
+        .evaluation-record {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        
+        .evaluation-record-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .evaluation-record-comment {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        /* 新增调整按钮样式 */
+        .adjust-btn {
+            padding: 2px 5px;
+            font-size: 10px;
+            line-height: 1;
+            background-color: #ddd;
+            color: #333;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .adjust-btn:hover {
+            background-color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录界面 -->
+    <div class="login-container" id="login-container">
+        <div class="class-title" id="class-title">桂江二中**班课堂加分系统</div>
+        <div class="login-title">请选择学科</div>
+        <div class="subject-list" id="subject-list">
+            <div class="subject-item" data-subject="语文">语文</div>
+            <div class="subject-item" data-subject="数学">数学</div>
+            <div class="subject-item" data-subject="英语">英语</div>
+            <div class="subject-item" data-subject="道法">道法</div>
+            <div class="subject-item" data-subject="历史">历史</div>
+            <div class="subject-item" data-subject="物理">物理</div>
+            <div class="subject-item" data-subject="化学">化学</div>
+            <div class="subject-item" data-subject="班主任">班主任</div>
+        </div>
+        <div class="add-subject">
+            <input type="text" id="new-subject" placeholder="添加新学科...">
+            <button onclick="addSubject()">添加</button>
+        </div>
+        <div class="login-section" id="login-section">
+            <div class="error-message" id="error-message"></div>
+            <input type="password" id="password" placeholder="密码">
+            <div class="login-actions">
+                <button class="login-btn" onclick="login()">登录</button>
+                <button class="btn-info" onclick="showRegisterForm()">注册</button>
+            </div>
+            <div class="login-actions" style="margin-top:15px">
+                <button class="btn-dark" onclick="showAdminPanel()">数据管理</button>
+            </div>
+        </div>
+        <div class="register-form" id="register-form">
+            <h3>教师注册</h3>
+            <input type="text" id="register-teacher-name" placeholder="教师姓名">
+            <input type="password" id="register-password" placeholder="密码">
+            <input type="password" id="register-confirm-password" placeholder="确认密码">
+            <button class="login-btn" onclick="registerTeacher()">注册</button>
+            <button class="btn-negative" onclick="hideRegisterForm()">取消</button>
+        </div>
+        <div class="reset-password" id="reset-password">
+            <h3>重置密码</h3>
+            <input type="text" id="reset-teacher-name" placeholder="教师姓名">
+            <input type="password" id="new-password" placeholder="新密码">
+            <input type="password" id="confirm-new-password" placeholder="确认新密码">
+            <button class="login-btn" onclick="resetPassword()">重置密码</button>
+            <button class="btn-negative" onclick="cancelResetPassword()">取消</button>
+        </div>
+
+        <div class="login-instructions">
+            <h3>操作说明：</h3>
+            <ol>
+                <li>初次注册，请先点击科目，然后按注册，输入教师姓名简称，如某老师，以防忘记密码可以找回密码</li>
+                <li>注册后，只要选择科目，输入密码就可以登录，不必再输入姓名</li>
+                <li>登录后，可以由科任选择加分或减分，也可以选择今日清零，或者在右下角全部清零</li>
+                <li>下课时，科任老师可以给本节课评价或写评语，如果没有评价，可以在跳出的弹窗点击“”点赞“”或者“”正常“”</li>
+                <li>科任加减分后，班主任可以登录后台，看到各个科总加分减分情况</li>
+                <li>科任加减分后，可以在右上角导出学科加分情况，可以看到当天和本周汇总</li>
+                <li>班主任也可以可以导出全部学科加分情况，具体看到那一天哪一个科目加分扣分情况</li>
+               <li>班主任后台可以看到老师们给这节课的评价</li>
+                <li>程序在网上运行，但是数据其实是存在本地电脑里，如果教室一体机做了保护，重启电脑后，数据会消失，需要在每天关闭电脑的时候，通过导出数据及时保存，然后在第二次开机的时候，导入数据，就可以重新看到原本的数据</li>
+               <li>为防止一体机被保护导致数据在重启后情况的情况，系统设置了每40分钟自动保存一次的功能，请在调出的窗口另存到C盘以外的路径</li>
+                <li>忘记密码，可以自行在输错3次后找回，也可以由班主任重置</li>
+                <li>注意：导出的数据最好放在D盘或者优盘，重新导入的时候按下载路径导入</li>
+                <li>大家可以尝试放在网上空间运行，具体看操作指引</li>
+            </ol>
+        </div>
+
+        <div class="footer">
+            制作者：桂江二中 张老师 携手AI制作 愿您能使用愉快<br>
+            此版本为班级单机V250408版，正在继续学习中。
+        </div>
+    </div>
+    
+    <!-- 主界面 -->
+    <div class="main-container" id="main-container">
+        <button class="toggle-view-btn" id="toggle-view-btn">横屏模式</button>
+        
+        <div class="header">
+            <div class="title-container">
+                <div class="title" id="app-title">课堂加分系统</div>
+                <div class="date" id="current-date"></div>
+            </div>
+            <div class="header-controls">
+                <span id="current-subject"></span>
+                <span id="current-teacher"></span>
+                <button class="btn-info" id="import-btn" onclick="document.getElementById('file-input').click()" style="display: none;">导入名单</button>
+                <input type="file" id="file-input" class="file-input" accept=".xlsx,.xls" onchange="importStudents(event)">
+                <button class="btn-info" onclick="document.getElementById('import-data-input').click()" id="import-data-btn" style="display: none;">导入数据</button>
+                <input type="file" id="import-data-input" class="file-input" accept=".json" onchange="importData(event)" style="display: none;">
+                <button class="btn-warning" onclick="exportSubjectData()">导出学科数据</button>
+                <button class="btn-dark" onclick="exportClassData()" id="class-export-btn" style="display: none;">导出班级数据</button>
+                <button class="btn-info" onclick="exportAllData()">导出全部数据</button>
+                <button class="btn-info" onclick="logout()">重新登录</button>
+            </div>
+        </div>
+        
+        <div class="teacher-comment">
+            <div class="class-evaluation" id="class-evaluation">
+                <span class="evaluation-label">课堂评价:</span>
+                <div class="evaluation-options">
+                    <div class="evaluation-option" data-value="优">优</div>
+                    <div class="evaluation-option" data-value="良">良</div>
+                    <div class="evaluation-option" data-value="中">中</div>
+                    <div class="evaluation-option" data-value="差">差</div>
+                </div>
+            </div>
+            <textarea id="teacher-comment-input" placeholder="老师们，辛苦了，如果对本节课有特别的评价如表扬或批评，请写到这里哦！"></textarea>
+            <div class="comment-hint">请填写本节课的评价或建议</div>
+            <button class="btn-positive" onclick="saveTeacherComment()">保存评语</button>
+        </div>
+        
+        <div class="class-slogan" id="class-slogan">团结进取，勤奋好学</div>
+        <div class="slogan-editor" id="slogan-editor">
+            <input type="text" id="slogan-input" class="teacher-input" value="团结进取，勤奋好学" style="width: 100%;">
+            <div class="slogan-controls">
+                <input type="color" id="slogan-color" class="color-picker" value="#3498db">
+                <select id="slogan-font">
+                    <option value="16px">小</option>
+                    <option value="18px" selected>中</option>
+                    <option value="20px">大</option>
+                    <option value="24px">特大</option>
+                </select>
+                <button class="btn-positive" onclick="saveSlogan()">保存</button>
+                <button class="btn-negative" onclick="cancelEditSlogan()">取消</button>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <button class="btn-positive" id="sort-btn" onclick="sortStudents()">按学号排序</button>
+            <button class="btn-negative" onclick="resetTodayData()">今日归零</button>
+        </div>
+        
+        <div class="students-container" id="students-container">
+            <!-- 学生卡片将在这里动态生成 -->
+        </div>
+        
+        <div class="instructions" id="instructions">
+            这是一个课堂加减分小程序，班主任可以导入学生学号和姓名。各个科任可以根据当节课情况进行加减分；班主任可以看到学生当天和当周情况。程式目前只能在班级电脑运行。拷贝到别的电脑，数据会被清空。请留意。
+        </div>
+        
+        <div class="instructions-edit" id="instructions-edit">
+            <textarea class="instructions-textarea" id="instructions-text"></textarea>
+            <button class="btn-positive" onclick="saveInstructions()">保存说明</button>
+            <button class="btn-negative" onclick="cancelEditInstructions()">取消</button>
+        </div>
+        
+        <div class="admin-panel" id="admin-panel">
+            <h3>班主任管理</h3>
+            <div>
+                <label for="class-title-input">修改班级标题:</label>
+                <input type="text" id="class-title-input" value="桂江二中**班课堂加分系统" style="width: 100%; margin-bottom: 10px;">
+                <button class="btn-info" onclick="saveClassTitle()">保存标题</button>
+            </div>
+            <div>
+                <label for="reset-subject">选择学科:</label>
+                <select id="reset-subject">
+                    <!-- 学科选项将通过JavaScript动态添加 -->
+                </select>
+                <button class="btn-warning" onclick="resetSubjectPassword()">重置密码</button>
+            </div>
+            <div class="admin-controls">
+                <button class="btn-negative" onclick="resetAllData()">清空所有数据</button>
+            </div>
+            
+            <div class="evaluation-records" id="evaluation-records">
+                <h4>今日课堂评价记录</h4>
+                <!-- 评价记录将在这里动态生成 -->
+            </div>
+        </div>
+        
+        <button class="reset-btn btn-warning" onclick="resetAllData()">全部重置</button>
+        
+        <div class="export-hint" id="export-hint"></div>
+    </div>
+
+    <!-- 数据管理弹窗 -->
+    <div class="modal" id="admin-modal">
+        <div class="modal-content">
+            <h3>数据管理</h3>
+            <p>请选择操作：</p>
+            <div class="modal-buttons">
+                <button class="btn-positive" onclick="exportAllData()">导出数据</button>
+                <button class="btn-positive" onclick="document.getElementById('import-data-input').click()">导入数据</button>
+                <button class="btn-negative" onclick="hideAdminPanel()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 评价提醒弹窗 -->
+    <div class="modal" id="evaluation-modal">
+        <div class="modal-content">
+            <h3>课堂评价提醒</h3>
+            <p>是否对这节课进行评价？</p>
+            <div class="modal-buttons">
+                <button class="btn-positive" onclick="saveDefaultEvaluation('优')">点赞</button>
+                <button class="btn-info" onclick="saveDefaultEvaluation('良')">正常</button>
+                <button class="btn-negative" onclick="returnToEvaluation()">现在写</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 存储学生数据
+        let students = [];
+        let allScoreRecords = {};
+        let currentUser = null;
+        let currentSubject = null;
+        let currentTeacher = null;
+        let isHomeroomTeacher = false;
+        let sortByScore = false;
+        let isLandscape = false;
+        let passwordAttempts = 0;
+        
+        // 学科列表
+        const defaultSubjects = ['语文', '数学', '英语', '道法', '历史', '物理', '化学', '班主任'];
+        let subjects = [];
+        
+        // 用户信息存储
+        let teachers = {}; // {subject: {name: string, password: string}}
+        
+        // 班级口号设置
+        let classSlogan = '向美向善，求真致远';
+        let sloganColor = '#3498db';
+        let sloganFontSize = '18px';
+        
+        // 班级标题
+        let classTitle = '桂江二中**班课堂加分系统';
+        
+        // 班主任温馨提示，随时可以更改为班级通知
+        let instructions = '这是一个适合班级各个科任老师和班主任使用的课堂加减分小程序。1、可以先由班主任导入学生学号和姓名，导入时请准备有学生姓名和学号的EXCEL表。2、各个科任可以根据当节课情况进行加减分；3、班主任可以看到学生当天和当周情况。4、程式目前只能在班级电脑运行。拷贝到别的电脑，需要在班主任账号进入后台，导出数据后，再重新在另外一台电脑导入。否则数据会被清空。请留意。';
+        
+        // 课堂评价和评语
+        let classEvaluations = []; // [{date, subject, teacher, evaluation, comment}]
+        let currentEvaluation = null;
+        let currentComment = '';
+        
+        // 初始化显示当前日期
+        function displayCurrentDate() {
+            const now = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('zh-CN', options);
+        }
+        
+        // 加载本地数据
+        function loadLocalData() {
+            const savedData = localStorage.getItem('classScoreSystemData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                students = data.students || [];
+                allScoreRecords = data.allScoreRecords || {};
+                subjects = data.subjects || defaultSubjects;
+                teachers = data.teachers || {};
+                classSlogan = data.classSlogan || '团结进取，勤奋好学';
+                sloganColor = data.sloganColor || '#3498db';
+                sloganFontSize = data.sloganFontSize || '18px';
+                classTitle = data.classTitle || '桂江二中**班课堂加分系统';
+                instructions = data.instructions || '这是一个课堂加减分小程序，班主任可以导入学生学号和姓名。各个科任可以根据当节课情况进行加减分；班主任可以看到学生当天和当周情况。程式目前只能在班级电脑运行。拷贝到别的电脑，数据会被清空。请留意。';
+                classEvaluations = data.classEvaluations || [];
+                
+                // 更新操作说明显示
+                document.getElementById('instructions').textContent = instructions;
+                document.getElementById('class-title').textContent = classTitle;
+            } else {
+                students = [];
+                allScoreRecords = {};
+                subjects = defaultSubjects;
+                teachers = {};
+                classEvaluations = [];
+            }
+        }
+        
+        // 保存数据到本地
+        function saveLocalData() {
+            const data = {
+                students,
+                allScoreRecords,
+                subjects,
+                teachers,
+                classSlogan,
+                sloganColor,
+                sloganFontSize,
+                classTitle,
+                instructions,
+                classEvaluations,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('classScoreSystemData', JSON.stringify(data));
+            
+            // 提示用户
+            showExportHint();
+        }
+        
+        // 显示导出提示
+        function showExportHint() {
+            const hint = document.getElementById('export-hint');
+            hint.textContent = '数据已自动保存。如需迁移数据，请使用"导出全部数据"功能。';
+            hint.style.display = 'block';
+            
+            setTimeout(() => {
+                hint.style.display = 'none';
+            }, 5000);
+        }
+        
+        // 渲染学科列表
+        function renderSubjects() {
+            const subjectList = document.getElementById('subject-list');
+            subjectList.innerHTML = '';
+            
+            subjects.forEach(subject => {
+                const item = document.createElement('div');
+                item.className = 'subject-item';
+                item.textContent = subject;
+                item.dataset.subject = subject;
+                item.addEventListener('click', function() {
+                    document.querySelectorAll('.subject-item').forEach(i => i.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+                subjectList.appendChild(item);
+            });
+        }
+        
+        // 添加新学科
+        function addSubject() {
+            const newSubjectInput = document.getElementById('new-subject');
+            const newSubject = newSubjectInput.value.trim();
+            
+            if (newSubject && !subjects.includes(newSubject)) {
+                subjects.push(newSubject);
+                renderSubjects();
+                newSubjectInput.value = '';
+                saveLocalData();
+            }
+        }
+        
+        // 登录系统
+        function login() {
+            const selectedSubject = document.querySelector('.subject-item.selected');
+            if (!selectedSubject) {
+                alert('请选择学科');
+                return;
+            }
+            
+            currentSubject = selectedSubject.dataset.subject;
+            isHomeroomTeacher = currentSubject === '班主任';
+            
+            const password = document.getElementById('password').value;
+            
+            // 检查该学科是否已注册
+            if (!teachers[currentSubject]) {
+                showError('您没有注册');
+                return;
+            }
+            
+            // 验证密码
+            if (password !== teachers[currentSubject].password) {
+                passwordAttempts++;
+                showError('密码错误');
+                
+                if (passwordAttempts >= 2) {
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('reset-password').style.display = 'block';
+                }
+                return;
+            }
+            
+            // 登录成功
+            passwordAttempts = 0;
+            hideError();
+            currentUser = currentSubject;
+            currentTeacher = teachers[currentSubject].name;
+            
+            // 初始化当前评价
+            currentEvaluation = '良'; // 默认评价改为"良"
+            currentComment = '';
+            document.getElementById('teacher-comment-input').value = '';
+            
+            // 设置评价选项
+            document.querySelectorAll('.evaluation-option').forEach(option => {
+                option.classList.remove('selected');
+                if (option.dataset.value === currentEvaluation) {
+                    option.classList.add('selected');
+                }
+                
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.evaluation-option').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    currentEvaluation = this.dataset.value;
+                });
+            });
+            
+            // 切换到主界面
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('main-container').style.display = 'block';
+            document.getElementById('current-subject').textContent = currentSubject;
+            document.getElementById('current-teacher').textContent = currentTeacher;
+            
+            // 如果是班主任，显示班级数据导出按钮和口号编辑
+            if (isHomeroomTeacher) {
+                document.getElementById('class-export-btn').style.display = 'block';
+                document.getElementById('slogan-editor').style.display = 'block';
+                document.getElementById('slogan-input').value = classSlogan;
+                document.getElementById('slogan-color').value = sloganColor;
+                document.getElementById('slogan-font').value = sloganFontSize;
+                document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('instructions-edit').style.display = 'block';
+                document.getElementById('import-data-btn').style.display = 'block';
+                
+                // 填充学科选择下拉框
+                const resetSubjectSelect = document.getElementById('reset-subject');
+                resetSubjectSelect.innerHTML = '';
+                subjects.forEach(subject => {
+                    if (subject !== '班主任') {
+                        const option = document.createElement('option');
+                        option.value = subject;
+                        option.textContent = subject;
+                        resetSubjectSelect.appendChild(option);
+                    }
+                });
+                
+                // 设置班级标题输入框的值
+                document.getElementById('class-title-input').value = classTitle;
+                
+                // 渲染评价记录
+                renderEvaluationRecords();
+            }
+            
+            // 设置班级口号
+            updateSloganDisplay();
+            
+            // 如果没有学生数据，显示导入按钮
+            if (students.length === 0 && isHomeroomTeacher) {
+                document.getElementById('import-btn').style.display = 'block';
+            } else {
+                document.getElementById('import-btn').style.display = 'none';
+            }
+            
+            renderStudents();
+            saveLocalData();
+        }
+        
+        // 渲染评价记录
+        function renderEvaluationRecords() {
+            if (!isHomeroomTeacher) return;
+            
+            const recordsContainer = document.getElementById('evaluation-records');
+            const today = new Date().toISOString().slice(0, 10);
+            
+            // 清空容器
+            recordsContainer.innerHTML = '<h4>今日课堂评价记录</h4>';
+            
+            // 筛选今天的评价记录
+            const todayEvaluations = classEvaluations.filter(e => e.date === today);
+            
+            if (todayEvaluations.length === 0) {
+                recordsContainer.innerHTML += '<p>今日暂无评价记录</p>';
+                return;
+            }
+            
+            // 按时间排序
+            todayEvaluations.sort((a, b) => {
+                if (a.time && b.time) {
+                    return a.time.localeCompare(b.time);
+                }
+                return 0;
+            });
+            
+            // 添加评价记录
+            todayEvaluations.forEach(eval => {
+                const recordDiv = document.createElement('div');
+                recordDiv.className = 'evaluation-record';
+                
+                recordDiv.innerHTML = `
+                    <div class="evaluation-record-header">
+                        <span>${eval.subject} - ${eval.teacher}</span>
+                        <span>评价: ${eval.evaluation}</span>
+                    </div>
+                    <div class="evaluation-record-time">时间: ${eval.time || '未知'}</div>
+                    <div class="evaluation-record-comment">${eval.comment || '无特别评语'}</div>
+                `;
+                
+                recordsContainer.appendChild(recordDiv);
+            });
+        }
+        
+        // 保存教师评语
+        function saveTeacherComment() {
+            const commentInput = document.getElementById('teacher-comment-input');
+            currentComment = commentInput.value.trim();
+            
+            // 保存评价记录
+            const now = new Date();
+            const today = now.toISOString().slice(0, 10);
+            const timeStr = now.toLocaleTimeString('zh-CN', { hour12: false });
+            
+            // 检查是否已有今天的评价记录
+            const existingIndex = classEvaluations.findIndex(
+                e => e.date === today && e.subject === currentSubject && e.teacher === currentTeacher
+            );
+            
+            if (existingIndex >= 0) {
+                // 更新现有记录
+                classEvaluations[existingIndex] = {
+                    date: today,
+                    time: timeStr,
+                    subject: currentSubject,
+                    teacher: currentTeacher,
+                    evaluation: currentEvaluation,
+                    comment: currentComment
+                };
+            } else {
+                // 添加新记录
+                classEvaluations.push({
+                    date: today,
+                    time: timeStr,
+                    subject: currentSubject,
+                    teacher: currentTeacher,
+                    evaluation: currentEvaluation,
+                    comment: currentComment
+                });
+            }
+            
+            saveLocalData();
+            alert('评语已保存！');
+            
+            // 如果是班主任，刷新评价记录显示
+            if (isHomeroomTeacher) {
+                renderEvaluationRecords();
+            }
+        }
+        
+        // 显示注册表单
+        function showRegisterForm() {
+            const selectedSubject = document.querySelector('.subject-item.selected');
+            if (!selectedSubject) {
+                alert('请选择学科');
+                return;
+            }
+            
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+        }
+        
+        // 隐藏注册表单
+        function hideRegisterForm() {
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-section').style.display = 'block';
+        }
+        
+        // 注册教师
+        function registerTeacher() {
+            const selectedSubject = document.querySelector('.subject-item.selected');
+            if (!selectedSubject) {
+                alert('请选择学科');
+                return;
+            }
+            
+            const subject = selectedSubject.dataset.subject;
+            const teacherName = document.getElementById('register-teacher-name').value.trim();
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+            
+            if (!teacherName) {
+                alert('请输入教师姓名');
+                return;
+            }
+            
+            if (password.length < 4) {
+                alert('密码至少需要4位字符');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                alert('两次输入的密码不一致');
+                return;
+            }
+            
+            // 检查该学科是否已注册
+            if (teachers[subject]) {
+                alert('该学科已注册');
+                return;
+            }
+            
+            // 注册教师
+            teachers[subject] = {
+                name: teacherName,
+                password: password
+            };
+            
+            saveLocalData();
+            alert('注册成功！');
+            
+            // 清空表单并返回登录界面
+            document.getElementById('register-teacher-name').value = '';
+            document.getElementById('register-password').value = '';
+            document.getElementById('register-confirm-password').value = '';
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-section').style.display = 'block';
+        }
+        
+        // 显示错误信息
+        function showError(message) {
+            const errorElement = document.getElementById('error-message');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        
+        // 隐藏错误信息
+        function hideError() {
+            document.getElementById('error-message').style.display = 'none';
+        }
+        
+        // 重置密码
+        function resetPassword() {
+            const teacherName = document.getElementById('reset-teacher-name').value.trim();
+            const newPassword = document.getElementById('new-password').value;
+            const confirmNewPassword = document.getElementById('confirm-new-password').value;
+            
+            if (!teacherName) {
+                alert('请输入教师姓名');
+                return;
+            }
+            
+            if (teacherName !== teachers[currentSubject].name) {
+                alert('教师姓名不正确');
+                return;
+            }
+            
+            if (newPassword.length < 4) {
+                alert('密码至少需要4位字符');
+                return;
+            }
+            
+            if (newPassword !== confirmNewPassword) {
+                alert('两次输入的密码不一致');
+                return;
+            }
+            
+            teachers[currentSubject].password = newPassword;
+            saveLocalData();
+            alert('密码重置成功！');
+            
+            // 返回登录界面
+            cancelResetPassword();
+        }
+        
+        // 取消重置密码
+        function cancelResetPassword() {
+            document.getElementById('reset-password').style.display = 'none';
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('password').value = '';
+            document.getElementById('reset-teacher-name').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-new-password').value = '';
+            passwordAttempts = 0;
+            hideError();
+        }
+        
+        // 班主任重置学科密码
+        function resetSubjectPassword() {
+            if (!isHomeroomTeacher) return;
+            
+            const subject = document.getElementById('reset-subject').value;
+            const teacherName = prompt(`请输入${subject}教师的姓名:`);
+            
+            if (!teacherName) return;
+            
+            if (!teachers[subject] || teachers[subject].name !== teacherName) {
+                alert('教师姓名不正确');
+                return;
+            }
+            
+            const newPassword = prompt('请输入新密码:');
+            if (!newPassword || newPassword.length < 4) {
+                alert('密码至少需要4位字符');
+                return;
+            }
+            
+            teachers[subject].password = newPassword;
+            saveLocalData();
+            alert(`${subject}教师的密码已重置！`);
+        }
+        
+        // 退出登录
+        function logout() {
+            // 检查是否已保存评价和评语
+            const today = new Date().toISOString().slice(0, 10);
+            const hasEvaluation = classEvaluations.some(
+                e => e.date === today && e.subject === currentSubject && e.teacher === currentTeacher
+            );
+            
+            if (!hasEvaluation) {
+                // 显示评价提醒弹窗
+                document.getElementById('evaluation-modal').style.display = 'flex';
+            } else {
+                // 直接退出
+                forceLogout();
+            }
+        }
+        
+        // 保存默认评价
+        function saveDefaultEvaluation(evaluation) {
+            const now = new Date();
+            const today = now.toISOString().slice(0, 10);
+            const timeStr = now.toLocaleTimeString('zh-CN', { hour12: false });
+            
+            // 检查是否已有今天的评价记录
+            const existingIndex = classEvaluations.findIndex(
+                e => e.date === today && e.subject === currentSubject && e.teacher === currentTeacher
+            );
+            
+            if (existingIndex >= 0) {
+                // 更新现有记录
+                classEvaluations[existingIndex] = {
+                    date: today,
+                    time: timeStr,
+                    subject: currentSubject,
+                    teacher: currentTeacher,
+                    evaluation: evaluation,
+                    comment: evaluation === '优' ? '老师点赞本堂课' : '课堂情况正常'
+                };
+            } else {
+                // 添加新记录
+                classEvaluations.push({
+                    date: today,
+                    time: timeStr,
+                    subject: currentSubject,
+                    teacher: currentTeacher,
+                    evaluation: evaluation,
+                    comment: evaluation === '优' ? '老师点赞本堂课' : '课堂情况正常'
+                });
+            }
+            
+            saveLocalData();
+            hideEvaluationModal();
+            forceLogout();
+        }
+        
+        // 返回评价界面
+        function returnToEvaluation() {
+            hideEvaluationModal();
+        }
+        
+        // 隐藏评价提醒弹窗
+        function hideEvaluationModal() {
+            document.getElementById('evaluation-modal').style.display = 'none';
+        }
+        
+        // 强制退出（不保存）
+        function forceLogout() {
+            currentUser = null;
+            currentSubject = null;
+            currentTeacher = null;
+            isHomeroomTeacher = false;
+            
+            document.getElementById('login-container').style.display = 'block';
+            document.getElementById('main-container').style.display = 'none';
+            document.getElementById('password').value = '';
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('reset-password').style.display = 'none';
+            passwordAttempts = 0;
+            hideError();
+        }
+        
+        // 排序学生
+        function sortStudents() {
+            sortByScore = !sortByScore;
+            document.getElementById('sort-btn').textContent = sortByScore ? "按学号排序" : "按分数排序";
+            
+            if (sortByScore) {
+                // 按总分排序（高到低），同分按学号排序
+                students.sort((a, b) => {
+                    const aTotal = calculateStudentTotal(a.id);
+                    const bTotal = calculateStudentTotal(b.id);
+                    
+                    if (bTotal !== aTotal) {
+                        return bTotal - aTotal;
+                    }
+                    return parseInt(a.id) - parseInt(b.id);
+                });
+            } else {
+                // 按学号数字大小排序（小到大）
+                students.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+            }
+            renderStudents();
+        }
+        
+        // 计算学生总分
+        function calculateStudentTotal(studentId) {
+            if (!allScoreRecords[studentId]) return 0;
+            
+            let total = 0;
+            for (const subject in allScoreRecords[studentId]) {
+                const records = allScoreRecords[studentId][subject].history;
+                total += records.reduce((sum, record) => sum + (record.score > 0 ? record.score : 0), 0);
+            }
+            return total;
+        }
+        
+        // 计算学生本周总分
+        function calculateStudentWeekTotal(studentId) {
+            if (!allScoreRecords[studentId]) return 0;
+            
+            const now = new Date();
+            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            let total = 0;
+            for (const subject in allScoreRecords[studentId]) {
+                const records = allScoreRecords[studentId][subject].history;
+                records.forEach(record => {
+                    const recordDate = new Date(record.date);
+                    if (recordDate >= oneWeekAgo) {
+                        total += record.score;
+                    }
+                });
+            }
+            return total;
+        }
+        
+        // 渲染所有学生
+        function renderStudents() {
+            const container = document.getElementById('students-container');
+            container.innerHTML = '';
+            
+            // 创建行容器
+            let rowContainer = null;
+            
+            students.forEach((student, index) => {
+                // 每行学生数量根据横屏模式调整
+                const studentsPerRow = isLandscape ? 12 : 6;
+                
+                // 创建新行
+                if (index % studentsPerRow === 0) {
+                    rowContainer = document.createElement('div');
+                    rowContainer.className = 'student-row';
+                    container.appendChild(rowContainer);
+                }
+                
+                const studentCard = document.createElement('div');
+                studentCard.className = 'student-card';
+                
+                // 获取学生记录
+                const studentRecords = allScoreRecords[student.id] || {};
+                const currentSubjectRecords = studentRecords[currentSubject] || {
+                    todayPositive: 0,
+                    todayNegative: 0,
+                    weekPositive: 0,
+                    weekNegative: 0,
+                    history: []
+                };
+                
+                // 计算本周数据
+                updateWeekData(student.id);
+                
+                // 计算当日和本周总分
+                const todayTotal = currentSubjectRecords.todayPositive + currentSubjectRecords.todayNegative;
+                const weekTotal = currentSubjectRecords.weekPositive + currentSubjectRecords.weekNegative;
+                
+                // 生成学生卡片HTML
+                studentCard.innerHTML = `
+                    <div class="student-id">学号: ${student.id}</div>
+                    <div class="student-name">${student.name}</div>
+                    <div class="student-score-container">
+                        <div class="score-positive">
+                            <button class="adjust-btn" onclick="adjustScore('${student.id}', 'positive', -1)">-</button>
+                            +${currentSubjectRecords.todayPositive}
+                            <button class="adjust-btn" onclick="adjustScore('${student.id}', 'positive', 1)">+</button>
+                        </div>
+                        <div class="score-negative">
+                            <button class="adjust-btn" onclick="adjustScore('${student.id}', 'negative', 1)">-</button>
+                            ${currentSubjectRecords.todayNegative}
+                            <button class="adjust-btn" onclick="adjustScore('${student.id}', 'negative', -1)">+</button>
+                        </div>
+                    </div>
+                    <div class="score-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">今日总分:</span>
+                            <span class="summary-value">${todayTotal}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">本周总分:</span>
+                            <span class="summary-value">${weekTotal}</span>
+                        </div>
+                    </div>
+                    <div class="student-actions">
+                        <button class="btn-positive" onclick="changeScore('${student.id}', 1)">+1</button>
+                        <button class="btn-positive" onclick="changeScore('${student.id}', 2)">+2</button>
+                        <button class="btn-negative" onclick="changeScore('${student.id}', -1)">-1</button>
+                        <button class="btn-negative" onclick="changeScore('${student.id}', -2)">-2</button>
+                    </div>
+                `;
+                
+                // 如果是班主任视图，添加各科老师评分情况
+                if (isHomeroomTeacher) {
+                    const teacherScores = document.createElement('div');
+                    teacherScores.className = 'teacher-scores';
+                    
+                    let hasScores = false;
+                    let html = '<div style="margin-top: 10px; font-size: 11px;">';
+                    
+                    for (const subject in studentRecords) {
+                        if (subject === currentSubject) continue;
+                        
+                        const records = studentRecords[subject];
+                        if (records.todayPositive !== 0 || records.todayNegative !== 0) {
+                            hasScores = true;
+                            html += `
+                                <div class="teacher-score-item">
+                                    <span class="teacher-name">${subject}:</span>
+                                    <span class="teacher-positive">+${records.todayPositive}</span>
+                                    <span class="teacher-negative">${records.todayNegative}</span>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    html += '</div>';
+                    
+                    if (hasScores) {
+                        teacherScores.innerHTML = html;
+                        studentCard.appendChild(teacherScores);
+                    }
+                }
+                
+                rowContainer.appendChild(studentCard);
+            });
+        }
+        
+        // 更新本周数据
+        function updateWeekData(studentId) {
+            if (!allScoreRecords[studentId] || !allScoreRecords[studentId][currentSubject]) return;
+            
+            const now = new Date();
+            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            const subjectRecords = allScoreRecords[studentId][currentSubject];
+            let weekPositive = 0;
+            let weekNegative = 0;
+            
+            subjectRecords.history.forEach(record => {
+                const recordDate = new Date(record.date);
+                if (recordDate >= oneWeekAgo) {
+                    if (record.score > 0) {
+                        weekPositive += record.score;
+                    } else {
+                        weekNegative += record.score;
+                    }
+                }
+            });
+            
+            subjectRecords.weekPositive = weekPositive;
+            subjectRecords.weekNegative = weekNegative;
+        }
+        
+        // 修改分数
+        function changeScore(studentId, delta) {
+            if (!allScoreRecords[studentId]) {
+                allScoreRecords[studentId] = {};
+            }
+            
+            if (!allScoreRecords[studentId][currentSubject]) {
+                allScoreRecords[studentId][currentSubject] = {
+                    todayPositive: 0,
+                    todayNegative: 0,
+                    weekPositive: 0,
+                    weekNegative: 0,
+                    history: []
+                };
+            }
+            
+            const subjectRecords = allScoreRecords[studentId][currentSubject];
+            
+            // 记录历史
+            const now = new Date();
+            subjectRecords.history.push({
+                date: now.toISOString().slice(0, 10),
+                subject: currentSubject,
+                teacher: currentTeacher,
+                score: delta
+            });
+            
+            // 更新当日数据
+            if (delta > 0) {
+                subjectRecords.todayPositive += delta;
+                subjectRecords.weekPositive += delta;
+            } else {
+                subjectRecords.todayNegative += delta;
+                subjectRecords.weekNegative += delta;
+            }
+            
+            // 自动保存
+            saveLocalData();
+            
+            // 重新渲染
+            renderStudents();
+        }
+
+        // 调整分数
+        function adjustScore(studentId, type, delta) {
+            if (!allScoreRecords[studentId] || !allScoreRecords[studentId][currentSubject]) return;
+
+            const subjectRecords = allScoreRecords[studentId][currentSubject];
+            let scoreChange = 0;
+
+            if (type === 'positive') {
+                const newValue = subjectRecords.todayPositive + delta;
+                if (newValue >= 0) {
+                    scoreChange = delta;
+                    subjectRecords.todayPositive = newValue;
+                } else {
+                    scoreChange = -subjectRecords.todayPositive;
+                    subjectRecords.todayPositive = 0;
+                }
+            } else if (type === 'negative') {
+                const newValue = subjectRecords.todayNegative + delta;
+                if (newValue <= 0) {
+                    scoreChange = delta;
+                    subjectRecords.todayNegative = newValue;
+                } else {
+                    scoreChange = -subjectRecords.todayNegative;
+                    subjectRecords.todayNegative = 0;
+                }
+            }
+
+            if (scoreChange !== 0) {
+                const now = new Date();
+                subjectRecords.history.push({
+                    date: now.toISOString().slice(0, 10),
+                    subject: currentSubject,
+                    teacher: currentTeacher,
+                    score: type === 'positive' ? scoreChange : scoreChange
+                });
+                saveLocalData();
+                renderStudents();
+            }
+        }
+        
+        // 从Excel导入学生名单
+        function importStudents(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                
+                students = jsonData.map(row => {
+                    const id = row['学号'] || row['ID'] || '';
+                    const name = row['姓名'] || row['Name'] || '';
+                    return {
+                        id: id.toString(),
+                        name: name.toString()
+                    };
+                });
+                
+                // 初始化记录
+                students.forEach(student => {
+                    if (!allScoreRecords[student.id]) {
+                        allScoreRecords[student.id] = {};
+                    }
+                    
+                    // 初始化当前学科记录
+                    if (!allScoreRecords[student.id][currentSubject]) {
+                        allScoreRecords[student.id][currentSubject] = {
+                            todayPositive: 0,
+                            todayNegative: 0,
+                            weekPositive: 0,
+                            weekNegative: 0,
+                            history: []
+                        };
+                    }
+                });
+                
+                sortStudents();
+                saveLocalData();
+                
+                // 隐藏导入按钮
+                if (students.length > 0) {
+                    document.getElementById('import-btn').style.display = 'none';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // 导入数据
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    students = data.students || [];
+                    allScoreRecords = data.allScoreRecords || {};
+                    subjects = data.subjects || defaultSubjects;
+                    teachers = data.teachers || {};
+                    classSlogan = data.classSlogan || '团结进取，勤奋好学';
+                    sloganColor = data.sloganColor || '#3498db';
+                    sloganFontSize = data.sloganFontSize || '18px';
+                    classTitle = data.classTitle || '桂江二中**班课堂加分系统';
+                    instructions = data.instructions || '这是一个课堂加减分小程序，班主任可以导入学生学号和姓名。各个科任可以根据当节课情况进行加减分；班主任可以看到学生当天和当周情况。程式目前只能在班级电脑运行。拷贝到别的电脑，数据会被清空。请留意。';
+                    classEvaluations = data.classEvaluations || [];
+                    
+                    saveLocalData();
+                    alert('数据导入成功！');
+                    
+                    // 刷新显示
+                    document.getElementById('instructions').textContent = instructions;
+                    document.getElementById('class-title').textContent = classTitle;
+                    
+                    if (currentSubject) {
+                        renderStudents();
+                    }
+                } catch (error) {
+                    alert('导入数据失败，文件格式不正确');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        // 导出学科数据
+        function exportSubjectData() {
+            if (students.length === 0) {
+                alert('没有学生数据可导出');
+                return;
+            }
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            
+            // 创建数据表 - 学生得分汇总
+            const summaryData = students.map(student => {
+                const records = allScoreRecords[student.id]?.[currentSubject] || { todayPositive: 0, todayNegative: 0, weekPositive: 0, weekNegative: 0 };
+                const todayTotal = records.todayPositive + records.todayNegative;
+                const weekTotal = records.weekPositive + records.weekNegative;
+                return {
+                    "学号": student.id,
+                    "姓名": student.name,
+                    "今日加分": records.todayPositive,
+                    "今日扣分": -records.todayNegative,
+                    "今日总分": todayTotal,
+                    "本周加分": records.weekPositive,
+                    "本周扣分": -records.weekNegative,
+                    "本周总分": weekTotal
+                };
+            }).sort((a, b) => parseInt(a.学号) - parseInt(b.学号)); // 按学号数字排序
+            
+            const summaryWs = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "得分汇总");
+            
+            // 创建数据表 - 详细记录
+            const detailData = [];
+            students.forEach(student => {
+                const records = allScoreRecords[student.id]?.[currentSubject]?.history || [];
+                records.forEach(record => {
+                    detailData.push({
+                        "学号": student.id,
+                        "姓名": student.name,
+                        "日期": record.date,
+                        "教师": record.teacher,
+                        "得分": record.score > 0 ? `+${record.score}` : record.score
+                    });
+                });
+            });
+            
+            if (detailData.length > 0) {
+                // 按日期和学号排序
+                detailData.sort((a, b) => {
+                    if (a.日期 === b.日期) {
+                        return parseInt(a.学号) - parseInt(b.学号);
+                    }
+                    return a.日期.localeCompare(b.日期);
+                });
+                
+                const detailWs = XLSX.utils.json_to_sheet(detailData);
+                XLSX.utils.book_append_sheet(wb, detailWs, "详细记录");
+            }
+            
+            // 添加课堂评价表
+            const today = new Date().toISOString().slice(0, 10);
+            const todayEvaluations = classEvaluations.filter(e => e.date === today && e.subject === currentSubject);
+            
+            if (todayEvaluations.length > 0) {
+                const evalData = todayEvaluations.map(eval => ({
+                    "学科": eval.subject,
+                    "教师": eval.teacher,
+                    "时间": eval.time,
+                    "课堂评价": eval.evaluation,
+                    "评语": eval.comment || "无"
+                }));
+                
+                const evalWs = XLSX.utils.json_to_sheet(evalData);
+                XLSX.utils.book_append_sheet(wb, evalWs, "课堂评价");
+            }
+            
+            // 生成Excel文件并下载
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            XLSX.writeFile(wb, `${currentSubject}评分记录_${dateStr}.xlsx`);
+        }
+        
+        // 导出班级数据（班主任专用）
+        function exportClassData() {
+            if (!isHomeroomTeacher || students.length === 0) return;
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            
+            // 创建数据表 - 学生得分汇总
+            const summaryData = students.map(student => {
+                let totalPositive = 0;
+                let totalNegative = 0;
+                let weekPositive = 0;
+                let weekNegative = 0;
+                
+                if (allScoreRecords[student.id]) {
+                    for (const subject in allScoreRecords[student.id]) {
+                        const records = allScoreRecords[student.id][subject];
+                        totalPositive += records.todayPositive;
+                        totalNegative += records.todayNegative;
+                        weekPositive += records.weekPositive;
+                        weekNegative += records.weekNegative;
+                    }
+                }
+                
+                const todayTotal = totalPositive + totalNegative;
+                const weekTotal = weekPositive + weekNegative;
+                
+                return {
+                    "学号": student.id,
+                    "姓名": student.name,
+                    "今日加分": totalPositive,
+                    "今日扣分": -totalNegative,
+                    "今日总分": todayTotal,
+                    "本周加分": weekPositive,
+                    "本周扣分": -weekNegative,
+                    "本周总分": weekTotal
+                };
+            }).sort((a, b) => parseInt(a.学号) - parseInt(b.学号)); // 按学号数字排序
+            
+            const summaryWs = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, "班级得分汇总");
+            
+            // 创建数据表 - 各科今日得分
+            const todaySubjectData = [];
+            students.forEach(student => {
+                if (allScoreRecords[student.id]) {
+                    for (const subject in allScoreRecords[student.id]) {
+                        const records = allScoreRecords[student.id][subject];
+                        if (records.todayPositive !== 0 || records.todayNegative !== 0) {
+                            todaySubjectData.push({
+                                "学号": student.id,
+                                "姓名": student.name,
+                                "学科": subject,
+                                "教师": records.history.length > 0 ? records.history[0].teacher : '',
+                                "加分": records.todayPositive,
+                                "扣分": -records.todayNegative,
+                                "总分": records.todayPositive + records.todayNegative
+                            });
+                        }
+                    }
+                }
+            });
+            
+            if (todaySubjectData.length > 0) {
+                todaySubjectData.sort((a, b) => {
+                    if (a.学号 === b.学号) {
+                        return a.学科.localeCompare(b.学科);
+                    }
+                    return parseInt(a.学号) - parseInt(b.学号);
+                });
+                
+                const todayWs = XLSX.utils.json_to_sheet(todaySubjectData);
+                XLSX.utils.book_append_sheet(wb, todayWs, "各科今日得分");
+            }
+            
+            // 创建数据表 - 各科本周得分
+            const weekSubjectData = [];
+            students.forEach(student => {
+                if (allScoreRecords[student.id]) {
+                    for (const subject in allScoreRecords[student.id]) {
+                        const records = allScoreRecords[student.id][subject];
+                        if (records.weekPositive !== 0 || records.weekNegative !== 0) {
+                            weekSubjectData.push({
+                                "学号": student.id,
+                                "姓名": student.name,
+                                "学科": subject,
+                                "教师": records.history.length > 0 ? records.history[0].teacher : '',
+                                "加分": records.weekPositive,
+                                "扣分": -records.weekNegative,
+                                "总分": records.weekPositive + records.weekNegative
+                            });
+                        }
+                    }
+                }
+            });
+            
+            if (weekSubjectData.length > 0) {
+                weekSubjectData.sort((a, b) => {
+                    if (a.学号 === b.学号) {
+                        return a.学科.localeCompare(b.学科);
+                    }
+                    return parseInt(a.学号) - parseInt(b.学号);
+                });
+                
+                const weekWs = XLSX.utils.json_to_sheet(weekSubjectData);
+                XLSX.utils.book_append_sheet(wb, weekWs, "各科本周得分");
+            }
+            
+            // 创建数据表 - 本周排名
+            const rankingData = students.map(student => {
+                const weekTotal = calculateStudentWeekTotal(student.id);
+                return {
+                    "学号": student.id,
+                    "姓名": student.name,
+                    "本周总分": weekTotal
+                };
+            }).sort((a, b) => b.本周总分 - a.本周总分); // 按总分从高到低排序
+            
+            // 添加排名列
+            rankingData.forEach((item, index) => {
+                item.排名 = index + 1;
+            });
+            
+            const rankingWs = XLSX.utils.json_to_sheet(rankingData);
+            XLSX.utils.book_append_sheet(wb, rankingWs, "本周排名");
+            
+            // 添加课堂评价表
+            const today = new Date().toISOString().slice(0, 10);
+            const todayEvaluations = classEvaluations.filter(e => e.date === today);
+            
+            if (todayEvaluations.length > 0) {
+                const evalData = todayEvaluations.map(eval => ({
+                    "学科": eval.subject,
+                    "教师": eval.teacher,
+                    "时间": eval.time,
+                    "课堂评价": eval.evaluation,
+                    "评语": eval.comment || "无"
+                }));
+                
+                // 按时间排序
+                evalData.sort((a, b) => a.时间.localeCompare(b.时间));
+                
+                const evalWs = XLSX.utils.json_to_sheet(evalData);
+                XLSX.utils.book_append_sheet(wb, evalWs, "课堂评价");
+            }
+            
+            // 生成Excel文件并下载
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            XLSX.writeFile(wb, `班级评分汇总_${dateStr}.xlsx`);
+        }
+        
+        // 导出全部数据
+        function exportAllData() {
+            const data = {
+                students,
+                allScoreRecords,
+                subjects,
+                teachers,
+                classSlogan,
+                sloganColor,
+                sloganFontSize,
+                classTitle,
+                instructions,
+                classEvaluations,
+                timestamp: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            saveAs(blob, `课堂加分系统数据_${new Date().toISOString().slice(0, 10)}.json`);
+            
+            alert('全部数据已导出为JSON文件，请妥善保存！');
+        }
+        
+        // 重置今日数据
+        function resetTodayData() {
+            if (confirm('确定要重置今日数据吗？今日的加分和扣分记录将被清空！')) {
+                students.forEach(student => {
+                    if (allScoreRecords[student.id] && allScoreRecords[student.id][currentSubject]) {
+                        const records = allScoreRecords[student.id][currentSubject];
+                        
+                        // 记录清零前先保存到历史
+                        if (records.todayPositive !== 0 || records.todayNegative !== 0) {
+                            const now = new Date();
+                            records.history.push({
+                                date: now.toISOString().slice(0, 10),
+                                subject: currentSubject,
+                                teacher: currentTeacher,
+                                score: records.todayPositive + records.todayNegative
+                            });
+                        }
+                        
+                        records.todayPositive = 0;
+                        records.todayNegative = 0;
+                    }
+                });
+                
+                saveLocalData();
+                renderStudents();
+                alert('今日数据已重置！');
+            }
+        }
+        
+        // 重置所有数据
+        function resetAllData() {
+            if (isHomeroomTeacher) {
+                if (confirm('警告：这将清空所有数据，包括学生名单、评分记录和教师信息！\n\n建议先导出数据备份。\n\n确定要继续吗？')) {
+                    localStorage.removeItem('classScoreSystemData');
+                    students = [];
+                    allScoreRecords = {};
+                    teachers = {};
+                    classEvaluations = [];
+                    renderStudents();
+                    alert('所有数据已重置！');
+                }
+            } else {
+                if (confirm('确定要重置所有数据吗？这将清除所有评分记录！')) {
+                    students.forEach(student => {
+                        if (allScoreRecords[student.id]) {
+                            allScoreRecords[student.id] = {};
+                        }
+                    });
+                    saveLocalData();
+                    renderStudents();
+                    alert('所有数据已重置！');
+                }
+            }
+        }
+        
+        // 切换横屏/竖屏模式
+        function toggleViewMode() {
+            isLandscape = !isLandscape;
+            const mainContainer = document.getElementById('main-container');
+            const toggleBtn = document.getElementById('toggle-view-btn');
+            
+            if (isLandscape) {
+                mainContainer.classList.add('landscape');
+                toggleBtn.textContent = '竖屏模式';
+            } else {
+                mainContainer.classList.remove('landscape');
+                toggleBtn.textContent = '横屏模式';
+            }
+            
+            renderStudents();
+        }
+        
+        // 更新班级口号显示
+        function updateSloganDisplay() {
+            const sloganElement = document.getElementById('class-slogan');
+            sloganElement.textContent = classSlogan;
+            sloganElement.style.color = sloganColor;
+            sloganElement.style.fontSize = sloganFontSize;
+        }
+        
+        // 保存班级口号
+        function saveSlogan() {
+            classSlogan = document.getElementById('slogan-input').value.trim() || '团结进取，勤奋好学';
+            sloganColor = document.getElementById('slogan-color').value;
+            sloganFontSize = document.getElementById('slogan-font').value;
+            
+            updateSloganDisplay();
+            saveLocalData();
+        }
+        
+        // 取消编辑班级口号
+        function cancelEditSlogan() {
+            document.getElementById('slogan-input').value = classSlogan;
+            document.getElementById('slogan-color').value = sloganColor;
+            document.getElementById('slogan-font').value = sloganFontSize;
+        }
+        
+        // 保存操作说明
+        function saveInstructions() {
+            instructions = document.getElementById('instructions-text').value;
+            document.getElementById('instructions').textContent = instructions;
+            document.getElementById('instructions-edit').style.display = 'none';
+            saveLocalData();
+        }
+        
+        // 取消编辑操作说明
+        function cancelEditInstructions() {
+            document.getElementById('instructions-text').value = instructions;
+            document.getElementById('instructions-edit').style.display = 'none';
+        }
+        
+        // 编辑操作说明
+        function editInstructions() {
+            document.getElementById('instructions-text').value = instructions;
+            document.getElementById('instructions-edit').style.display = 'block';
+        }
+        
+        // 显示数据管理面板
+        function showAdminPanel() {
+            document.getElementById('admin-modal').style.display = 'flex';
+        }
+        
+        // 隐藏数据管理面板
+        function hideAdminPanel() {
+            document.getElementById('admin-modal').style.display = 'none';
+        }
+        
+        // 保存班级标题
+        function saveClassTitle() {
+            const newTitle = document.getElementById('class-title-input').value.trim();
+            if (newTitle) {
+                classTitle = newTitle;
+                document.getElementById('class-title').textContent = classTitle;
+                saveLocalData();
+                alert('班级标题已更新！');
+            }
+        }
+        
+        // 页面加载时初始化
+        window.onload = function() {
+            displayCurrentDate();
+            loadLocalData();
+            renderSubjects();
+            
+            // 设置横屏/竖屏切换按钮事件
+            document.getElementById('toggle-view-btn').addEventListener('click', toggleViewMode);
+            
+            // 每40分钟自动保存数据
+            setInterval(function() {
+                saveLocalData();
+            }, 2400000); // 40分钟 = 2400000毫秒
+            
+            // 监听窗口关闭事件
+            window.addEventListener('beforeunload', function(e) {
+                if(students.length > 0) {
+                    e.preventDefault();
+                    saveLocalData();
+                    return e.returnValue = '数据已自动保存';
+                }
+            });
+            
+            // 初始化操作说明
+            document.getElementById('instructions').textContent = instructions;
+            document.getElementById('instructions-text').value = instructions;
+            document.getElementById('class-title').textContent = classTitle;
+        };
+    </script>
+</body>
+</html>
