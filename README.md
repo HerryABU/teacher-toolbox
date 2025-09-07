@@ -3,7 +3,7 @@
 # 🛠️ 教师工具箱 (Teacher Toolbox)
 
 > **一个正在构建中的开源教育工具平台**
-> 
+>
 > 🔗 **项目主页**: [https://gitee.com/feng-minamata-hao/teacher-toolbox](https://gitee.com/feng-minamata-hao/teacher-toolbox)
 
 ## 🌟 项目简介
@@ -64,17 +64,31 @@ tools/
     *   **贡献代码**: 如果您有编程技能，欢迎提交 Pull Request，为架构或新工具贡献力量。
     *   **测试与反馈**: 帮助我们测试现有结构的稳定性和易用性。
 
-## 🤝 如何参与
-
-1.  **关注项目**: 在 Gitee 上关注此仓库，获取最新动态。
-2.  **提交议题 (Issue)**: 提出您的建议、报告问题或讨论新想法。
-3.  **提交代码 (Pull Request)**: 直接为项目贡献代码。
-4.  **交流讨论**: 参与社区，分享您的见解。
-
 ## 📦 快速开始
 
-1.  克隆本项目到本地：`git clone https://gitee.com/feng-minamata-hao/teacher-toolbox.git`
-2.  打开根目录下的 `index.html` 文件即可在浏览器中运行主框架。
+本项目使用了现代 Web 技术（如 `fetch` API），**无法通过直接双击 `index.html` 文件的方式运行**（会因浏览器的跨域安全策略而失败）。
+
+**必须在本地启动一个 HTTP 服务器**来访问项目。您可以使用任何您熟悉的服务器工具，例如：
+
+*   **Node.js 的 `http-server`**:
+    ```bash
+    npm install -g http-server
+    http-server -p 8080
+    ```
+
+*   **Python 3 的内置服务器**:
+    ```bash
+    python -m http.server 8080
+    ```
+
+*   **Python 2 的内置服务器**:
+    ```bash
+    python -m SimpleHTTPServer 8080
+    ```
+
+*   或其他任何能提供静态文件服务的 Web 服务器 (如 Nginx, Apache 等)。
+
+启动服务器后，在浏览器中访问 `http://localhost:8080` (或您指定的端口) 即可使用。
 
 > **注意**: 当前版本的上传功能尚未完全开放，我们正在努力构建更安全、更便捷的文件上传通道。
 
