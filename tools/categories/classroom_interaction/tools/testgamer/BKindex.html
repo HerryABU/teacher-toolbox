@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>终极主题答题冒险 B版-v1.45</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Helvetica Neue", "Arial", sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            transition: background 0.8s ease;
+        }
+        #gameContainer {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+            z-index: 100;
+        }
+        #hud div {
+            margin-bottom: 5px;
+        }
+        /* 题目区域 */
+        #questionArea {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 90%;
+            text-align: center;
+            font-size: 18px;
+            line-height: 1.6;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 20;
+            transition: all 0.5s ease;
+        }
+        /* 选项容器 */
+        .optionsContainer {
+            position: absolute;
+            top: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            width: fit-content;
+            z-index: 15;
+        }
+        /* 默认选项样式（每个主题会彻底覆盖） */
+        .optionBlock {
+            width: 100px;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            cursor: default;
+            position: relative;
+            transition: transform 0.2s;
+            border-radius: 5px;
+            color: #333;
+        }
+        .optionBlock .label {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .optionBlock .text {
+            font-size: 12px;
+            margin-top: 4px;
+            text-align: center;
+            padding: 0 5px;
+        }
+        /* 反馈动画 */
+        .optionBlock.correct { animation: correctAnim 0.6s ease-out forwards; }
+        .optionBlock.wrong { animation: wrongAnim 0.5s ease-out forwards; opacity: 0.7; }
+        @keyframes correctAnim {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(15deg); }
+            100% { transform: scale(1); }
+        }
+        @keyframes wrongAnim {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(15deg) translateY(50px); opacity: 0.2; }
+        }
+        /* 角色容器 */
+        #character {
+            position: absolute;
+            bottom: 160px;
+            width: 40px;
+            height: 40px;
+            z-index: 10;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease;
+            filter: drop-shadow(2px 4px 3px rgba(0,0,0,0.4));
+        }
+        /* 角色动画 */
+        #character.jump { animation: jump 0.8s ease-out; }
+        #character.die { animation: die 1s ease-out forwards; }
+        @keyframes jump {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-120px); }
+        }
+        @keyframes die {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-80px) rotate(180deg); }
+            100% { transform: translateY(200px) rotate(360deg); opacity: 0; }
+        }
+        /* 地面 */
+        #ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100px;
+            transition: all 0.5s ease;
+        }
+        /* 控制按钮 */
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        .controlBtn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255,255,255,0.3);
+            border: 3px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+        .controlBtn:active {
+            background: rgba(255,255,255,0.5);
+            transform: scale(0.95);
+        }
+        /* 奖励动画容器 */
+        .reward {
+            position: absolute;
+            z-index: 50;
+            animation: floatUp 1.5s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-150px) scale(0.3); opacity: 0; }
+        }
+        /* 反馈弹窗 */
+        .feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 200;
+            animation: fadeInOut 1.5s ease-out forwards;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* 答案反馈层（新增） */
+        #answerScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        #answerScreen h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #FFD700;
+        }
+
+        #answerScreen p {
+            font-size: 18px;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        #answerScreen .btn {
+            padding: 12px 30px;
+            margin: 0 10px;
+            background: #FF6B35;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        #answerScreen .btn:hover {
+            background: #FF8552;
+            transform: scale(1.05);
+        }
+
+        /* 开始界面 */
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 400;
+            color: white;
+        }
+        #startScreen h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.4;
+        }
+        .startBtn {
+            padding: 15px 40px;
+            background: #FF6B35;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .startBtn:hover {
+            background: #FF8552;
+            transform: scale(1.05);
+        }
+        /* 结束界面 */
+        .endScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            color: white;
+        }
+        .endScreen h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        .endScreen .stats {
+            font-size: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        /* 装饰元素容器 */
+        #decorationContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        /* 响应式 */
+        @media (max-width: 600px) {
+            #questionArea { font-size: 16px; padding: 15px; }
+            .controlBtn { width: 60px; height: 60px; font-size: 24px; }
+            .optionBlock { width: 80px; height: 70px; }
+            .optionBlock .label { font-size: 18px; }
+            .optionBlock .text { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- 装饰元素 -->
+        <div id="decorationContainer"></div>
+        <!-- HUD -->
+        <div id="hud">
+            <div>分数: <span id="score">0</span></div>
+            <div>收集: <span id="rewards">0</span></div>
+            <div>生命: <span id="lives">❤️❤️❤️</span></div>
+        </div>
+        <!-- 题目区 -->
+        <div id="questionArea">
+            <div id="questionText">点击开始游戏</div>
+        </div>
+        <!-- 选项区 -->
+        <div class="optionsContainer" id="optionsContainer"></div>
+        <!-- 角色 -->
+        <div id="character"></div>
+        <!-- 地面 -->
+        <div id="ground"></div>
+        <!-- 控制按钮 -->
+        <div id="controls">
+            <div class="controlBtn" id="leftBtn">←</div>
+            <div class="controlBtn" id="jumpBtn">↑</div>
+            <div class="controlBtn" id="rightBtn">→</div>
+        </div>
+
+        <!-- 答案反馈层 -->
+        <div id="answerScreen">
+            <h2 id="answerTitle">✓ 正确！</h2>
+            <p id="answerDetail">答案：A - Number</p>
+            <div>
+                <button class="btn" id="nextBtn">下一题</button>
+                <button class="btn" id="retryBtn" style="display:none;">再试一次</button>
+            </div>
+        </div>
+
+        <!-- 开始界面 -->
+        <div id="startScreen">
+            <h1>🎭 终极主题答题冒险 🎮</h1>
+            <p style="color:#ccc;margin-bottom:30px;">每道题都是全新世界！</p>
+            <button class="startBtn" id="startBtn">开始冒险</button>
+        </div>
+
+        <!-- 音效元素（使用公有领域 MP3 + jsDelivr CDN） -->
+        <audio id="jumpSound" src="https://cdn.jsdelivr.net/gh/KenneyNL/kenney-sounds@master/sounds/retro/retro-game04.mp3" preload="auto"></audio>
+        <audio id="correctSound" src="https://cdn.jsdelivr.net/gh/KenneyNL/kenney-sounds@master/sounds/interface/interface_01.mp3" preload="auto"></audio>
+        <audio id="wrongSound" src="https://cdn.jsdelivr.net/gh/KenneyNL/kenney-sounds@master/sounds/interface/interface_03.mp3" preload="auto"></audio>
+        <audio id="coinSound" src="https://cdn.jsdelivr.net/gh/KenneyNL/kenney-sounds@master/sounds/coins/coins_01.mp3" preload="auto"></audio>
+        <audio id="successSound" src="https://cdn.jsdelivr.net/gh/KenneyNL/kenney-sounds@master/sounds/interface/interface_05.mp3" preload="auto"></audio>
+        <audio id="failSound" src="https://cdn.jsdelivr.net/gh/KenneyNL/kenney-sounds@master/sounds/interface/interface_04.mp3" preload="auto"></audio>
+    </div>
+    <script>
+        // =====================
+        // 🎭 主题配置系统（彻底不同的视觉系统）
+        // =====================
+        const themes = {
+            mario: {
+                name: "超级马里奥",
+                background: "linear-gradient(to bottom, #5C94FC 0%, #5C94FC 80%, #C84C0C 80%)",
+                groundStyle: "linear-gradient(to bottom, #8B7355 0%, #8B7355 10%, #5C4033 10%); border-top: 5px solid #3A2A1A;",
+                questionBg: "rgba(0, 0, 0, 0.7)",
+                character: `
+                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="15" r="12" fill="#FF6B35"/> <!-- 帽子 -->
+                        <rect x="10" y="20" width="20" height="15" fill="red" rx="2"/> <!-- 身体 -->
+                        <rect x="12" y="35" width="6" height="5" fill="#333" rx="1"/> <!-- 左脚 -->
+                        <rect x="22" y="35" width="6" height="5" fill="#333" rx="1"/> <!-- 右脚 -->
+                        <circle cx="16" cy="12" r="2" fill="#fff"/> <!-- 左眼 -->
+                        <circle cx="24" cy="12" r="2" fill="#fff"/> <!-- 右眼 -->
+                        <circle cx="17" cy="12" r="1" fill="#000"/> <!-- 左瞳孔 -->
+                        <circle cx="25" cy="12" r="1" fill="#000"/> <!-- 右瞳孔 -->
+                        <rect x="18" y="18" width="4" height="2" fill="#000" rx="1"/> <!-- 嘴 -->
+                    </svg>
+                `,
+                blockStyle: `
+                    .optionBlock {
+                        background: linear-gradient(to bottom, #FFB84D, #CC8E33);
+                        border: 2px solid #663300;
+                        border-radius: 5px 5px 0 0;
+                    }
+                `,
+                reward: {
+                    html: `<div style="width:30px;height:30px;background:radial-gradient(circle,#FFD700,#FFA500);border:2px solid #FFB84D;border-radius:50%;"></div>`,
+                    animation: "floatUp"
+                },
+                decorations: `
+                    <!-- 云朵 -->
+                    <div style="position:absolute;width:120px;height:50px;top:15%;left:15%;background:white;border-radius:50px;opacity:0.8;animation:floatCloud 25s infinite ease-in-out;"></div>
+                    <div style="position:absolute;width:90px;height:40px;top:10%;right:20%;background:white;border-radius:50px;opacity:0.8;animation:floatCloud 30s infinite ease-in-out;"></div>
+                    <!-- 管道 -->
+                    <div style="position:absolute;width:60px;height:100px;bottom:100px;left:80px;background:linear-gradient(to right,#00A800,#00D800,#008400);border:2px solid #003600;border-radius:5px 5px 0 0;"></div>
+                    <div style="position:absolute;width:60px;height:100px;bottom:100px;right:80px;background:linear-gradient(to right,#00A800,#00D800,#008400);border:2px solid #003600;border-radius:5px 5px 0 0;"></div>
+                `,
+                animations: `
+                    @keyframes floatCloud {
+                        0%, 100% { transform: translateX(0); }
+                        50% { transform: translateX(40px); }
+                    }
+                `,
+                correctAnim: "scale(1.2) rotate(15deg)",
+                wrongAnim: "rotate(15deg) translateY(50px)"
+            },
+            eco: {
+                name: "森林守护者",
+                background: "linear-gradient(to bottom, #87CEEB 0%, #87CEEB 70%, #228B22 70%)",
+                groundStyle: "linear-gradient(to bottom, #3A5F0B 0%, #013220 100%); border-top: 5px solid #006400;",
+                questionBg: "rgba(0, 80, 0, 0.7)",
+                character: `
+                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="15" r="12" fill="#4169E1"/> <!-- 头盔 -->
+                        <rect x="10" y="20" width="20" height="15" fill="#32CD32" rx="2"/> <!-- 环保服 -->
+                        <rect x="12" y="35" width="6" height="5" fill="#8B4513" rx="1"/> <!-- 左靴 -->
+                        <rect x="22" y="35" width="6" height="5" fill="#8B4513" rx="1"/> <!-- 右靴 -->
+                        <circle cx="16" cy="12" r="2" fill="#fff"/> <!-- 左眼 -->
+                        <circle cx="24" cy="12" r="2" fill="#fff"/> <!-- 右眼 -->
+                        <circle cx="17" cy="12" r="1" fill="#000"/> <!-- 左瞳孔 -->
+                        <circle cx="25" cy="12" r="1" fill="#000"/> <!-- 右瞳孔 -->
+                        <path d="M18 18 Q20 20 22 18" stroke="#000" stroke-width="1" fill="none"/> <!-- 微笑 -->
+                        <circle cx="30" cy="10" r="3" fill="#FFD700"/> <!-- 徽章 -->
+                    </svg>
+                `,
+                blockStyle: `
+                    .optionBlock {
+                        background: linear-gradient(to bottom, #90EE90, #228B22);
+                        border: 2px solid #006400;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 8px rgba(0,100,0,0.3);
+                    }
+                `,
+                reward: {
+                    html: `<div style="width:25px;height:25px;background:linear-gradient(135deg,#7CFC00,#32CD32);border:2px solid #006400;border-radius:50%;box-shadow:0 0 10px #7CFC00;"></div>`,
+                    animation: "floatUpSpin"
+                },
+                decorations: `
+                    <!-- 树木 -->
+                    <div style="position:absolute;width:40px;height:60px;bottom:100px;left:100px;background:linear-gradient(to right,#006400 50%,#228B22 50%);border-radius:20px 20px 0 0;box-shadow:5px 5px 10px rgba(0,0,0,0.3);"></div>
+                    <div style="position:absolute;width:50px;height:70px;bottom:100px;right:120px;background:linear-gradient(to right,#006400 50%,#228B22 50%);border-radius:25px 25px 0 0;box-shadow:5px 5px 10px rgba(0,0,0,0.3);"></div>
+                    <!-- 太阳 -->
+                    <div style="position:absolute;width:60px;height:60px;top:15%;right:15%;background:radial-gradient(circle,#FFD700,#FF8C00);border-radius:50%;box-shadow:0 0 30px #FFD700;animation:pulseSun 3s infinite;"></div>
+                `,
+                animations: `
+                    @keyframes pulseSun {
+                        0%, 100% { box-shadow: 0 0 30px #FFD700; }
+                        50% { box-shadow: 0 0 50px #FFD700; }
+                    }
+                    @keyframes floatUpSpin {
+                        0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+                        100% { transform: translateY(-150px) rotate(360deg) scale(0.3); opacity: 0; }
+                    }
+                `,
+                correctAnim: "scale(1.2) rotate(10deg) translateY(-10px)",
+                wrongAnim: "shake 0.5s ease-out forwards"
+            },
+            goldMiner: {
+                name: "黄金矿工",
+                background: "linear-gradient(to bottom, #8B4513 0%, #A0522D 50%, #654321 100%)",
+                groundStyle: "linear-gradient(to bottom, #5C4033 0%, #2F1C0F 100%); border-top: 5px solid #000;",
+                questionBg: "rgba(139, 69, 19, 0.8)",
+                character: `
+                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="15" r="11" fill="#8B4513"/> <!-- 头盔 -->
+                        <rect x="12" y="20" width="16" height="14" fill="#A0522D" rx="2"/> <!-- 工作服 -->
+                        <rect x="14" y="34" width="5" height="4" fill="#000"/> <!-- 左靴 -->
+                        <rect x="21" y="34" width="5" height="4" fill="#000"/> <!-- 右靴 -->
+                        <circle cx="17" cy="12" r="1.5" fill="#fff"/> <!-- 左眼 -->
+                        <circle cx="23" cy="12" r="1.5" fill="#fff"/> <!-- 右眼 -->
+                        <circle cx="17.5" cy="12" r="0.8" fill="#000"/> <!-- 左瞳孔 -->
+                        <circle cx="23.5" cy="12" r="0.8" fill="#000"/> <!-- 右瞳孔 -->
+                        <path d="M18 17 Q20 19 22 17" stroke="#000" stroke-width="1" fill="none"/> <!-- 严肃表情 -->
+                        <rect x="18" y="8" width="4" height="3" fill="#FFD700"/> <!-- 头灯 -->
+                    </svg>
+                `,
+                blockStyle: `
+                    .optionBlock {
+                        background: linear-gradient(to bottom right, #DAA520, #8B4513);
+                        border: 2px solid #696969;
+                        border-radius: 3px;
+                        box-shadow: inset 2px 2px 5px rgba(255,255,255,0.3), 3px 3px 8px rgba(0,0,0,0.5);
+                    }
+                `,
+                reward: {
+                    html: `<div style="width:30px;height:30px;background:radial-gradient(circle,#FFD700,#B8860B);border:2px solid #DAA520;border-radius:50%;box-shadow:0 0 15px rgba(255,215,0,0.7);animation:glow 1.5s infinite alternate;"></div>`,
+                    animation: "floatUp"
+                },
+                decorations: `
+                    <!-- 岩石 -->
+                    <div style="position:absolute;width:50px;height:40px;bottom:120px;left:150px;background:#696969;border-radius:10px;transform:rotate(10deg);box-shadow:5px 5px 15px rgba(0,0,0,0.5);"></div>
+                    <div style="position:absolute;width:40px;height:50px;bottom:130px;right:160px;background:#696969;border-radius:15px;transform:rotate(-15deg);box-shadow:5px 5px 15px rgba(0,0,0,0.5);"></div>
+                    <!-- 矿车 -->
+                    <div style="position:absolute;width:60px;height:30px;bottom:100px;left:50%;transform:translateX(-50%);background:#8B4513;border:2px solid #000;border-radius:5px;animation:shakeCart 2s infinite;box-shadow:0 5px 15px rgba(0,0,0,0.5);">
+                        <div style="position:absolute;bottom:-10px;left:10px;width:15px;height:10px;background:#000;border-radius:50%;"></div>
+                        <div style="position:absolute;bottom:-10px;right:10px;width:15px;height:10px;background:#000;border-radius:50%;"></div>
+                    </div>
+                `,
+                animations: `
+                    @keyframes shakeCart {
+                        0%, 100% { transform: translateX(-50%) rotate(0deg); }
+                        25% { transform: translateX(-55%) rotate(2deg); }
+                        75% { transform: translateX(-45%) rotate(-2deg); }
+                    }
+                    @keyframes glow {
+                        from { box-shadow: 0 0 15px rgba(255,215,0,0.7); }
+                        to { box-shadow: 0 0 25px rgba(255,215,0,1); }
+                    }
+                `,
+                correctAnim: "scale(1.2) rotate(5deg) translateY(-15px)",
+                wrongAnim: "fallRock 0.5s ease-out forwards"
+            },
+            space: {
+                name: "太空探险",
+                background: "linear-gradient(to bottom, #000033 0%, #000066 100%)",
+                groundStyle: "linear-gradient(to bottom, #4B0082 0%, #2E0854 100%); border-top: 5px solid #000;",
+                questionBg: "rgba(0, 0, 50, 0.8)",
+                character: `
+                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="15" r="12" fill="#C0C0C0"/> <!-- 头盔 -->
+                        <rect x="10" y="20" width="20" height="15" fill="#696969" rx="2"/> <!-- 太空服 -->
+                        <rect x="12" y="35" width="6" height="5" fill="#444" rx="1"/> <!-- 左靴 -->
+                        <rect x="22" y="35" width="6" height="5" fill="#444" rx="1"/> <!-- 右靴 -->
+                        <circle cx="16" cy="12" r="2" fill="#00BFFF"/> <!-- 左眼罩 -->
+                        <circle cx="24" cy="12" r="2" fill="#00BFFF"/> <!-- 右眼罩 -->
+                        <circle cx="16" cy="12" r="1" fill="#fff"/> <!-- 左眼 -->
+                        <circle cx="24" cy="12" r="1" fill="#fff"/> <!-- 右眼 -->
+                        <rect x="18" y="18" width="4" height="2" fill="#FF4500" rx="1"/> <!-- 通讯器 -->
+                        <circle cx="20" cy="5" r="3" fill="#FFD700"/> <!-- 天线 -->
+                    </svg>
+                `,
+                blockStyle: `
+                    .optionBlock {
+                        background: linear-gradient(to bottom, #4682B4, #000080);
+                        border: 2px solid #0000CD;
+                        border-radius: 5px;
+                        box-shadow: 0 0 15px rgba(70,130,180,0.5);
+                    }
+                `,
+                reward: {
+                    html: `<div style="width:25px;height:25px;background:radial-gradient(circle,#00BFFF,#0000CD);border:2px solid #00008B;border-radius:50%;box-shadow:0 0 20px #00BFFF;animation:twinkle 1s infinite;"></div>`,
+                    animation: "floatUpBlink"
+                },
+                decorations: `
+                    <!-- 星星 -->
+                    <div style="position:absolute;width:4px;height:4px;top:20%;left:30%;background:white;border-radius:50%;box-shadow:0 0 10px white;animation:twinkleStar 1s infinite;"></div>
+                    <div style="position:absolute;width:3px;height:3px;top:15%;right:25%;background:white;border-radius:50%;box-shadow:0 0 10px white;animation:twinkleStar 1.5s infinite;"></div>
+                    <!-- 行星 -->
+                    <div style="position:absolute;width:50px;height:50px;bottom:150px;left:200px;background:radial-gradient(circle,#FF6347,#8B0000);border-radius:50%;box-shadow:0 0 30px #FF6347;animation:rotatePlanet 10s linear infinite;"></div>
+                `,
+                animations: `
+                    @keyframes twinkleStar {
+                        0%, 100% { opacity: 0.3; box-shadow: 0 0 5px white; }
+                        50% { opacity: 1; box-shadow: 0 0 15px white; }
+                    }
+                    @keyframes rotatePlanet {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+                    @keyframes floatUpBlink {
+                        0% { transform: translateY(0); opacity: 0.5; }
+                        25% { opacity: 1; }
+                        75% { opacity: 1; }
+                        100% { transform: translateY(-150px) scale(0.3); opacity: 0; }
+                    }
+                `,
+                correctAnim: "scale(1.2) rotate(360deg)",
+                wrongAnim: "explode 0.5s ease-out forwards"
+            },
+            ocean: {
+                name: "深海寻宝",
+                background: "linear-gradient(to bottom, #1E90FF 0%, #00008B 100%)",
+                groundStyle: "linear-gradient(to bottom, #2F4F4F 0%, #000000 100%); border-top: 5px solid #000;",
+                questionBg: "rgba(0, 0, 100, 0.8)",
+                character: `
+                    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="15" r="12" fill="#4169E1"/> <!-- 潜水头盔 -->
+                        <rect x="10" y="20" width="20" height="15" fill="#1E90FF" rx="2"/> <!-- 潜水服 -->
+                        <rect x="12" y="35" width="6" height="5" fill="#4B0082" rx="1"/> <!-- 左脚蹼 -->
+                        <rect x="22" y="35" width="6" height="5" fill="#4B0082" rx="1"/> <!-- 右脚蹼 -->
+                        <circle cx="16" cy="12" r="2" fill="#fff"/> <!-- 左眼 -->
+                        <circle cx="24" cy="12" r="2" fill="#fff"/> <!-- 右眼 -->
+                        <circle cx="17" cy="12" r="1" fill="#000"/> <!-- 左瞳孔 -->
+                        <circle cx="25" cy="12" r="1" fill="#000"/> <!-- 右瞳孔 -->
+                        <path d="M18 18 Q20 20 22 18" stroke="#000" stroke-width="1" fill="none"/> <!-- 微笑 -->
+                        <ellipse cx="30" cy="10" rx="4" ry="2" fill="#FFD700"/> <!-- 氧气表 -->
+                    </svg>
+                `,
+                blockStyle: `
+                    .optionBlock {
+                        background: linear-gradient(to bottom, #20B2AA, #008080);
+                        border: 2px solid #006400;
+                        border-radius: 0 0 10px 10px;
+                        box-shadow: 0 5px 15px rgba(0,128,128,0.3);
+                    }
+                `,
+                reward: {
+                    html: `<div style="width:25px;height:25px;background:radial-gradient(circle,#F0FFFF,#E0FFFF);border:2px solid #AFEEEE;border-radius:50%;box-shadow:0 0 15px #00FFFF;animation:floatBubble 3s infinite;"></div>`,
+                    animation: "floatUpBubble"
+                },
+                decorations: `
+                    <!-- 珊瑚 -->
+                    <div style="position:absolute;width:30px;height:50px;bottom:100px;left:120px;background:linear-gradient(to top,#FF6347,#FF4500);border-radius:15px 15px 0 0;box-shadow:0 5px 15px rgba(255,99,71,0.3);"></div>
+                    <div style="position:absolute;width:40px;height:60px;bottom:100px;right:140px;background:linear-gradient(to top,#FF6347,#FF4500);border-radius:20px 20px 0 0;box-shadow:0 5px 15px rgba(255,99,71,0.3);"></div>
+                    <!-- 气泡 -->
+                    <div style="position:absolute;width:20px;height:20px;top:30%;left:40%;background:rgba(255,255,255,0.3);border-radius:50%;animation:riseBubble 3s infinite;"></div>
+                    <div style="position:absolute;width:15px;height:15px;top:25%;right:35%;background:rgba(255,255,255,0.3);border-radius:50%;animation:riseBubble 2.5s infinite;"></div>
+                `,
+                animations: `
+                    @keyframes riseBubble {
+                        0% { transform: translateY(0); opacity: 0.3; }
+                        50% { transform: translateY(-30px); opacity: 0.8; }
+                        100% { transform: translateY(-60px); opacity: 0; }
+                    }
+                    @keyframes floatUpBubble {
+                        0% { transform: translateY(0); opacity: 0.8; }
+                        50% { transform: translateY(-80px) scale(1.2); }
+                        100% { transform: translateY(-150px) scale(0.3); opacity: 0; }
+                    }
+                `,
+                correctAnim: "scale(1.2) translateY(-20px) rotate(10deg)",
+                wrongAnim: "sink 0.5s ease-out forwards"
+            }
+        };
+        // =====================
+        // 📚 题目数据（每题带 theme 字段）
+        // =====================
+        const questions = [
+            {
+                question: "JavaScript中，以下哪个不是原始数据类型？",
+                options: ["Number", "Array", "String", "Boolean"],
+                correct: "B",
+                theme: "mario"
+            },
+            {
+                question: "HTML5中，哪个标签用于定义导航链接？",
+                options: ["nav", "navigation", "navigate", "menu"],
+                correct: "A",
+                theme: "eco"
+            },
+            {
+                question: "CSS中，哪个属性用于设置元素的透明度？",
+                options: ["transparency", "opacity", "visible", "alpha"],
+                correct: "B",
+                theme: "goldMiner"
+            },
+            {
+                question: "在Git中，哪个命令用于查看提交历史？",
+                options: ["git status", "git log", "git history", "git show"],
+                correct: "B",
+                theme: "space"
+            },
+            {
+                question: "React中，哪个Hook用于处理副作用？",
+                options: ["useState", "useReducer", "useEffect", "useContext"],
+                correct: "C",
+                theme: "ocean"
+            },
+            {
+                question: "HTTP状态码404表示什么？",
+                options: ["服务器错误", "未找到", "禁止访问", "请求超时"],
+                correct: "B",
+                theme: "mario"
+            },
+            {
+                question: "Python中，哪个关键字用于定义函数？",
+                options: ["function", "def", "func", "define"],
+                correct: "B",
+                theme: "goldMiner"
+            },
+            {
+                question: "数据库中，SQL的全称是什么？",
+                options: ["Structured Query Language", "Simple Query Language", "Standard Query Language", "System Query Language"],
+                correct: "A",
+                theme: "space"
+            }
+        ];
+        // =====================
+        // 🎮 游戏状态
+        // =====================
+        let gameState = {
+            score: 0,
+            rewards: 0,
+            lives: 3,
+            currentQuestion: 0,
+            currentBlockIndex: 0,
+            isJumping: false,
+            isAnswering: false,
+            gameStarted: false,
+            currentTheme: null,
+            awaitingAction: false // 新增：等待用户点击按钮
+        };
+        // 常量
+        const BLOCK_WIDTH = 100;
+        const BLOCK_SPACING = 20;
+        // DOM 元素
+        const character = document.getElementById('character');
+        const questionArea = document.getElementById('questionArea');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const scoreElement = document.getElementById('score');
+        const rewardsElement = document.getElementById('rewards');
+        const livesElement = document.getElementById('lives');
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const jumpBtn = document.getElementById('jumpBtn');
+        const decorationContainer = document.getElementById('decorationContainer');
+        const ground = document.getElementById('ground');
+
+        // 音效元素
+        const jumpSound = document.getElementById('jumpSound');
+        const correctSound = document.getElementById('correctSound');
+        const wrongSound = document.getElementById('wrongSound');
+        const coinSound = document.getElementById('coinSound');
+        const successSound = document.getElementById('successSound');
+        const failSound = document.getElementById('failSound');
+
+        // 答案反馈层元素
+        const answerScreen = document.getElementById('answerScreen');
+        const answerTitle = document.getElementById('answerTitle');
+        const answerDetail = document.getElementById('answerDetail');
+        const nextBtn = document.getElementById('nextBtn');
+        const retryBtn = document.getElementById('retryBtn');
+
+        // =====================
+        // 🔊 音效系统（终极修复版）
+        // =====================
+        function playSound(sound) {
+            if (!sound || !sound.src) {
+                console.warn("音效未加载或无效:", sound);
+                return;
+            }
+            sound.currentTime = 0;
+            const playPromise = sound.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.warn("音效播放被浏览器阻止，等待用户交互后重试:", error);
+                    const unlockHandler = () => {
+                        sound.play().catch(() => {});
+                        document.removeEventListener('click', unlockHandler);
+                        document.removeEventListener('touchstart', unlockHandler);
+                    };
+                    document.addEventListener('click', unlockHandler, { once: true });
+                    document.addEventListener('touchstart', unlockHandler, { once: true });
+                });
+            }
+        }
+
+        // 预加载并解锁音频上下文
+        function unlockAudioContext() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext.resume().then(() => {
+                console.log("🎮 音频上下文已解锁");
+            }).catch(e => {
+                console.warn("音频上下文解锁失败:", e);
+            });
+            const sounds = [jumpSound, correctSound, wrongSound, coinSound, successSound, failSound];
+            sounds.forEach(sound => {
+                if (sound) {
+                    sound.volume = 0;
+                    sound.play().then(() => {
+                        sound.pause();
+                        sound.currentTime = 0;
+                        sound.volume = 1;
+                    }).catch(() => {});
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('click', unlockAudioContext, { once: true });
+            document.addEventListener('touchstart', unlockAudioContext, { once: true });
+        });
+
+        // =====================
+        // 🎨 主题应用函数（彻底换装）
+        // =====================
+        function applyTheme(themeKey) {
+            const theme = themes[themeKey];
+            if (!theme) return;
+            document.body.style.background = theme.background;
+            ground.style.cssText = theme.groundStyle;
+            questionArea.style.background = theme.questionBg;
+            character.innerHTML = theme.character;
+            decorationContainer.innerHTML = theme.decorations || '';
+            const existingStyle = document.getElementById('theme-block-style');
+            if (existingStyle) existingStyle.remove();
+            const blockStyle = document.createElement('style');
+            blockStyle.id = 'theme-block-style';
+            blockStyle.textContent = theme.blockStyle;
+            document.head.appendChild(blockStyle);
+            const existingAnimations = document.getElementById('theme-animations');
+            if (existingAnimations) existingAnimations.remove();
+            if (theme.animations) {
+                const animStyle = document.createElement('style');
+                animStyle.id = 'theme-animations';
+                animStyle.textContent = theme.animations;
+                document.head.appendChild(animStyle);
+            }
+            gameState.currentTheme = themeKey;
+            character.style.transform = 'translateY(0)';
+            character.classList.remove('die');
+        }
+        // =====================
+        // 🎮 游戏逻辑
+        // =====================
+        function initGame() {
+            startScreen.style.display = 'none';
+            gameState = {
+                score: 0,
+                rewards: 0,
+                lives: 3,
+                currentQuestion: 0,
+                currentBlockIndex: 0,
+                isJumping: false,
+                isAnswering: false,
+                gameStarted: true,
+                currentTheme: null,
+                awaitingAction: false
+            };
+            updateHUD();
+            loadQuestion();
+            moveToBlock(0);
+            playSound(jumpSound); // 播放开始音效
+        }
+
+        function loadQuestion() {
+            if (gameState.currentQuestion >= questions.length) {
+                playSound(successSound);
+                endGame(true);
+                return;
+            }
+            const q = questions[gameState.currentQuestion];
+            if (q.theme) {
+                applyTheme(q.theme);
+            }
+            questionText.textContent = q.question;
+            optionsContainer.innerHTML = '';
+            q.options.forEach((opt, i) => {
+                const block = document.createElement('div');
+                block.className = 'optionBlock';
+                block.innerHTML = `
+                    <div class="label">${String.fromCharCode(65 + i)}</div>
+                    <div class="text">${opt}</div>
+                `;
+                optionsContainer.appendChild(block);
+            });
+            gameState.isAnswering = true;
+            answerScreen.style.display = 'none'; // 隐藏答案层
+        }
+
+        function moveToBlock(index) {
+            if (index < 0 || index > 3 || gameState.isJumping || gameState.awaitingAction) return;
+            gameState.currentBlockIndex = index;
+            const centerX = getBlockCenterX(index);
+            character.style.left = (centerX - 20) + 'px';
+        }
+
+        function getBlockCenterX(index) {
+            const containerWidth = 4 * BLOCK_WIDTH + 3 * BLOCK_SPACING;
+            const startX = (window.innerWidth - containerWidth) / 2;
+            return startX + index * (BLOCK_WIDTH + BLOCK_SPACING) + BLOCK_WIDTH / 2;
+        }
+
+        function jump() {
+            if (!gameState.gameStarted || gameState.isJumping || !gameState.isAnswering || gameState.awaitingAction) return;
+            gameState.isJumping = true;
+            character.classList.add('jump');
+            playSound(jumpSound);
+
+            setTimeout(() => {
+                checkAnswer();
+            }, 400);
+
+            setTimeout(() => {
+                character.classList.remove('jump');
+                gameState.isJumping = false;
+            }, 800);
+        }
+
+        function checkAnswer() {
+            const currentIndex = gameState.currentBlockIndex;
+            const selectedOption = String.fromCharCode(65 + currentIndex);
+            const currentQ = questions[gameState.currentQuestion];
+            const blocks = document.querySelectorAll('.optionBlock');
+            const selectedBlock = blocks[currentIndex];
+
+            if (selectedOption === currentQ.correct) {
+                const theme = themes[gameState.currentTheme];
+                selectedBlock.style.animation = `0.6s ease-out forwards`;
+                selectedBlock.style.transform = theme.correctAnim;
+                gameState.score += 100;
+                gameState.rewards += 1;
+                updateHUD();
+                const rect = selectedBlock.getBoundingClientRect();
+                spawnThemeReward(rect.left + rect.width/2, rect.top);
+                playSound(correctSound);
+                playSound(coinSound);
+
+                showAnswerScreen(
+                    true,
+                    `✓ 正确！`,
+                    `${selectedOption} - ${currentQ.options[currentIndex]}`
+                );
+            } else {
+                const theme = themes[gameState.currentTheme];
+                selectedBlock.style.animation = `0.5s ease-out forwards`;
+                selectedBlock.style.transform = theme.wrongAnim;
+                selectedBlock.style.opacity = '0.2';
+                gameState.lives -= 1;
+                updateHUD();
+                playSound(wrongSound);
+
+                showAnswerScreen(
+                    false,
+                    `✗ 答错了！`,
+                    `正确答案：${currentQ.correct} - ${currentQ.options[getCorrectIndex(currentQ)]}`
+                );
+
+                character.classList.add('die');
+
+                if (gameState.lives <= 0) {
+                    setTimeout(() => {
+                        playSound(failSound);
+                        endGame(false);
+                    }, 1000);
+                    return;
+                }
+
+                retryBtn.style.display = 'inline-block';
+            }
+
+            gameState.awaitingAction = true;
+            gameState.isAnswering = false;
+        }
+
+        // 显示答案反馈层
+        function showAnswerScreen(isCorrect, title, detail) {
+            answerTitle.textContent = title;
+            answerTitle.style.color = isCorrect ? '#00FF00' : '#FF0000';
+            answerDetail.textContent = detail;
+            retryBtn.style.display = isCorrect ? 'none' : 'inline-block';
+            answerScreen.style.display = 'flex';
+        }
+
+        function spawnThemeReward(x, y) {
+            const theme = themes[gameState.currentTheme];
+            const reward = document.createElement('div');
+            reward.className = 'reward';
+            reward.style.left = (x - 15) + 'px';
+            reward.style.top = (y - 15) + 'px';
+            reward.innerHTML = theme.reward.html;
+            reward.style.animationName = theme.reward.animation;
+            document.getElementById('gameContainer').appendChild(reward);
+            setTimeout(() => {
+                if (reward.parentNode) {
+                    reward.remove();
+                }
+            }, 1500);
+        }
+
+        function getCorrectIndex(q) {
+            return q.correct.charCodeAt(0) - 65;
+        }
+
+        // 下一题
+        function nextQuestion() {
+            if (gameState.lives <= 0) {
+                playSound(failSound);
+                endGame(false);
+                return;
+            }
+            gameState.awaitingAction = false;
+            character.classList.remove('die');
+            gameState.currentQuestion++;
+            loadQuestion();
+            moveToBlock(0);
+        }
+
+        // 重试当前题
+        function retryQuestion() {
+            gameState.awaitingAction = false;
+            character.classList.remove('die');
+            loadQuestion();
+            moveToBlock(0);
+        }
+
+        function updateHUD() {
+            scoreElement.textContent = gameState.score;
+            rewardsElement.textContent = gameState.rewards;
+            livesElement.textContent = '❤️'.repeat(gameState.lives);
+        }
+
+        function endGame(isWin) {
+            gameState.gameStarted = false;
+            const existing = document.querySelector('.endScreen');
+            if (existing) existing.remove();
+            const endScreen = document.createElement('div');
+            endScreen.className = 'endScreen';
+            endScreen.innerHTML = `
+                <h1>${isWin ? '🎉 终极冒险大师！' : '💀 冒险结束'}</h1>
+                <div class="stats">
+                    最终得分: ${gameState.score}<br>
+                    收集物品: ${gameState.rewards}<br>
+                    ${isWin ? '你征服了所有世界！' : `你坚持到了第 ${gameState.currentQuestion + 1} 题！`}
+                </div>
+                <button class="startBtn" onclick="location.reload()">重新开始</button>
+            `;
+            document.body.appendChild(endScreen);
+        }
+        // =====================
+        // 🖱️ 事件绑定
+        // =====================
+        startBtn.addEventListener('click', initGame);
+        leftBtn.addEventListener('click', () => {
+            moveToBlock(gameState.currentBlockIndex - 1);
+        });
+        rightBtn.addEventListener('click', () => {
+            moveToBlock(gameState.currentBlockIndex + 1);
+        });
+        jumpBtn.addEventListener('click', jump);
+
+        // 绑定答案层按钮
+        nextBtn.addEventListener('click', nextQuestion);
+        retryBtn.addEventListener('click', retryQuestion);
+
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.gameStarted) return;
+
+            if (gameState.awaitingAction) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    if (gameState.lives > 0 && retryBtn.style.display !== 'none') {
+                        retryQuestion();
+                    } else {
+                        nextQuestion();
+                    }
+                }
+                return;
+            }
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    moveToBlock(gameState.currentBlockIndex - 1);
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    moveToBlock(gameState.currentBlockIndex + 1);
+                    break;
+                case 'ArrowUp':
+                case ' ':
+                case 'w':
+                case 'W':
+                    jump();
+                    break;
+            }
+        });
+
+        // 初始化 HUD
+        updateHUD();
+
+        // 控制台署名
+        console.log(`
+🎮 终极主题答题冒险 - 开源项目
+音效来源: Kenney.nl (公有领域)
+许可证: MIT
+`);
+    </script>
+</body>
+</html>

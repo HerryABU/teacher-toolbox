@@ -1,12 +1,58 @@
 [
   {
+    "type": "contributor",
     "name": "HerryABU",
     "role": "开发者",
-    "contribution": "主页制作，抽学号制作"
+    "contribution": "主页制作，抽学号系统设计与实现",
+    "date": "2024-08-15",
+    "avatar": "https://avatars.githubusercontent.com/u/173161601?v=4",
+    "github": "https://github.com/HerryABU",
+    "tags": ["Vue", "UI/UX"]
   },
   {
+    "type": "contributor",
+    "name": "HerryABU",
+    "role": "开发者",
+    "contribution": "马里奥互动题卡开发",
+    "date": "2024-09-05",
+    "avatar": "https://avatars.githubusercontent.com/u/173161601?v=4",
+    "github": "https://github.com/HerryABU",
+    "tags": ["Game", "Animation"]
+  },
+  {
+    "type": "contributor",
     "name": "张鹤泷",
     "role": "开发者",
-    "contribution": "分班调班，课堂加分系统，知识点随抽测小程序"
+    "contribution": "分班调班系统开发",
+    "date": "2024-08-18",
+    "avatar": "https://avatars.githubusercontent.com/u/173161601?v=4",
+    "github": null,
+    "tags": ["html", "算法"]
+  },
+  {
+    "type": "contributor",
+    "name": "张鹤泷",
+    "role": "开发者",
+    "contribution": "课堂加分系统与知识点随机测验工具",
+    "date": "2024-08-25",
+    "avatar": null,
+    "github": null,
+    "tags": ["前端", "交互"]
+  },
+  {
+    "type": "milestone",
+    "title": "项目正式开源",
+    "description": "代码首次公开，欢迎社区贡献！",
+    "date": "2024-08-01",
+    "icon": "🚀",
+    "color": "#4ECDC4"
+  },
+  {
+    "type": "milestone",
+    "title": "马里奥互动题卡上线",
+    "description": "趣味互动模块发布，提升课堂参与感",
+    "date": "2024-09-05",
+    "icon": "🎮",
+    "color": "#FF6B6B"
   }
 ]

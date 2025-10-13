@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>马里奥答题冒险</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Helvetica Neue", "Arial", sans-serif;
+            background: linear-gradient(to bottom, #5C94FC 0%, #5C94FC 80%, #C84C0C 80%);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #gameContainer {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        #hud div {
+            margin-bottom: 5px;
+        }
+
+        /* 题目区域 */
+        #questionArea {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 90%;
+            text-align: center;
+            font-size: 18px;
+            line-height: 1.6;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 20;
+        }
+
+        /* 选项砖块容器 */
+        .optionsContainer {
+            position: absolute;
+            top: 200px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            width: fit-content;
+            z-index: 15;
+        }
+
+        /* 选项砖块 */
+        .optionBlock {
+            width: 100px;
+            height: 80px;
+            background: linear-gradient(to bottom, #FFB84D, #CC8E33);
+            border: 2px solid #663300;
+            border-radius: 5px 5px 0 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            color: #333;
+            cursor: default;
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .optionBlock .label {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .optionBlock .text {
+            font-size: 12px;
+            margin-top: 4px;
+            text-align: center;
+            padding: 0 5px;
+        }
+
+        .optionBlock.correct {
+            animation: coinCollect 0.6s ease-out forwards;
+            background: linear-gradient(to bottom, #FFD700, #FFA500) !important;
+        }
+
+        .optionBlock.wrong {
+            animation: blockBreak 0.5s ease-out forwards;
+            background: #666 !important;
+        }
+
+        @keyframes coinCollect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(15deg); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes blockBreak {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(15deg) translateY(50px); opacity: 0.5; }
+        }
+
+        /* 马里奥小人 - SVG */
+        #mario {
+            position: absolute;
+            bottom: 160px;
+            width: 40px;
+            height: 40px;
+            z-index: 10;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease;
+            filter: drop-shadow(2px 4px 3px rgba(0,0,0,0.4));
+        }
+
+        #mario.jump {
+            animation: jump 0.8s ease-out;
+        }
+
+        #mario.die {
+            animation: die 1s ease-out forwards;
+        }
+
+        @keyframes jump {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-120px); }
+        }
+
+        @keyframes die {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-80px) rotate(180deg); }
+            100% { transform: translateY(200px) rotate(360deg); opacity: 0; }
+        }
+
+        /* 地面 */
+        #ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(to bottom, #8B7355 0%, #8B7355 10%, #5C4033 10%);
+            border-top: 5px solid #3A2A1A;
+        }
+
+        /* 控制按钮 */
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .controlBtn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255,255,255,0.3);
+            border: 3px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+
+        .controlBtn:active {
+            background: rgba(255,255,255,0.5);
+            transform: scale(0.95);
+        }
+
+        /* 金币动画元素 */
+        .coin {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, #FFD700 0%, #FFA500 100%);
+            border: 2px solid #FFB84D;
+            border-radius: 50%;
+            z-index: 50;
+            animation: coinFloat 1.5s ease-out forwards;
+        }
+
+        @keyframes coinFloat {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-150px) scale(0.3); opacity: 0; }
+        }
+
+        /* 反馈弹窗 */
+        .feedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #00A800;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 200;
+            animation: fadeInOut 1.5s ease-out forwards;
+        }
+
+        .feedback.error {
+            background: #FF0000;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* 开始界面 */
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            color: white;
+        }
+
+        #startScreen h1 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.4;
+            text-shadow: 0 0 10px #FFD700;
+        }
+
+        .startBtn {
+            padding: 15px 40px;
+            background: #FF6B35;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .startBtn:hover {
+            background: #FF8552;
+            transform: scale(1.05);
+        }
+
+        /* 结束界面 */
+        .endScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 400;
+            color: white;
+        }
+
+        .endScreen h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #FFD700;
+        }
+
+        .endScreen .stats {
+            font-size: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* 云朵装饰 */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.8;
+            z-index: 5;
+        }
+
+        .cloud1 {
+            width: 120px;
+            height: 50px;
+            top: 15%;
+            left: 15%;
+            animation: floatCloud 25s infinite ease-in-out;
+        }
+
+        .cloud2 {
+            width: 90px;
+            height: 40px;
+            top: 10%;
+            right: 20%;
+            animation: floatCloud 30s infinite ease-in-out;
+        }
+
+        @keyframes floatCloud {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(40px); }
+        }
+
+        /* 管道装饰 */
+        .pipe {
+            position: absolute;
+            bottom: 100px;
+            width: 60px;
+            height: 100px;
+            background: linear-gradient(to right, #00A800, #00D800, #008400);
+            border: 2px solid #003600;
+            border-radius: 5px 5px 0 0;
+            z-index: 1;
+        }
+
+        .pipe::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: -8px;
+            width: 76px;
+            height: 30px;
+            background: inherit;
+            border: 2px solid #003600;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 600px) {
+            #questionArea {
+                font-size: 16px;
+                padding: 15px;
+            }
+            .controlBtn {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+            .optionBlock {
+                width: 80px;
+                height: 70px;
+            }
+            .optionBlock .label {
+                font-size: 18px;
+            }
+            .optionBlock .text {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- 云朵 -->
+        <div class="cloud cloud1"></div>
+        <div class="cloud cloud2"></div>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div>分数: <span id="score">0</span></div>
+            <div>金币: <span id="coins">0</span></div>
+            <div>生命: <span id="lives">❤️❤️❤️</span></div>
+        </div>
+
+        <!-- 题目区 -->
+        <div id="questionArea">
+            <div id="questionText">点击开始游戏</div>
+        </div>
+
+        <!-- 选项区 -->
+        <div class="optionsContainer" id="optionsContainer"></div>
+
+        <!-- 马里奥 -->
+        <svg id="mario" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="15" r="12" fill="#FF6B35" />
+            <rect x="10" y="20" width="20" height="15" fill="red" rx="2" />
+            <rect x="12" y="35" width="6" height="5" fill="#333" rx="1" />
+            <rect x="22" y="35" width="6" height="5" fill="#333" rx="1" />
+            <circle cx="16" cy="12" r="2" fill="#fff" />
+            <circle cx="24" cy="12" r="2" fill="#fff" />
+            <circle cx="17" cy="12" r="1" fill="#000" />
+            <circle cx="25" cy="12" r="1" fill="#000" />
+            <rect x="18" y="18" width="4" height="2" fill="#000" rx="1" />
+        </svg>
+
+        <!-- 管道 -->
+        <div class="pipe" style="left: 80px;"></div>
+        <div class="pipe" style="right: 80px;"></div>
+
+        <!-- 地面 -->
+        <div id="ground"></div>
+
+        <!-- 控制按钮 -->
+        <div id="controls">
+            <div class="controlBtn" id="leftBtn">←</div>
+            <div class="controlBtn" id="jumpBtn">↑</div>
+            <div class="controlBtn" id="rightBtn">→</div>
+        </div>
+
+        <!-- 开始界面 -->
+        <div id="startScreen">
+            <h1>🍄 马里奥答题冒险 🍄<br>跳跃选择正确答案！</h1>
+            <button class="startBtn" id="startBtn">开始游戏</button>
+        </div>
+    </div>
+
+    <script>
+        // 题目数据（内嵌JSON）
+        const questions = [
+            {
+                question: "JavaScript中，以下哪个不是原始数据类型？",
+                options: ["Number", "Array", "String", "Boolean"],
+                correct: "B"
+            },
+            {
+                question: "HTML5中，哪个标签用于定义导航链接？",
+                options: ["nav", "navigation", "navigate", "menu"],
+                correct: "A"
+            },
+            {
+                question: "CSS中，哪个属性用于设置元素的透明度？",
+                options: ["transparency", "opacity", "visible", "alpha"],
+                correct: "B"
+            },
+            {
+                question: "在Git中，哪个命令用于查看提交历史？",
+                options: ["git status", "git log", "git history", "git show"],
+                correct: "B"
+            },
+            {
+                question: "React中，哪个Hook用于处理副作用？",
+                options: ["useState", "useReducer", "useEffect", "useContext"],
+                correct: "C"
+            },
+            {
+                question: "HTTP状态码404表示什么？",
+                options: ["服务器错误", "未找到", "禁止访问", "请求超时"],
+                correct: "B"
+            },
+            {
+                question: "Python中，哪个关键字用于定义函数？",
+                options: ["function", "def", "func", "define"],
+                correct: "B"
+            },
+            {
+                question: "数据库中，SQL的全称是什么？",
+                options: ["Structured Query Language", "Simple Query Language", "Standard Query Language", "System Query Language"],
+                correct: "A"
+            },
+            {
+                question: "下列哪个是前端框架？",
+                options: ["Spring", "Django", "Vue", "Laravel"],
+                correct: "C"
+            },
+            {
+                question: "下列哪个不是JavaScript保留字？",
+                options: ["let", "const", "var", "variable"],
+                correct: "D"
+            }
+        ];
+
+        // 游戏状态
+        let gameState = {
+            score: 0,
+            coins: 0,
+            lives: 3,
+            currentQuestion: 0,
+            currentBlockIndex: 0, // 0=A, 1=B, 2=C, 3=D
+            isJumping: false,
+            isAnswering: false,
+            gameStarted: false
+        };
+
+        // 常量
+        const BLOCK_WIDTH = 100;
+        const BLOCK_SPACING = 20;
+
+        // DOM 元素缓存
+        const mario = document.getElementById('mario');
+        const questionArea = document.getElementById('questionArea');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const scoreElement = document.getElementById('score');
+        const coinsElement = document.getElementById('coins');
+        const livesElement = document.getElementById('lives');
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const jumpBtn = document.getElementById('jumpBtn');
+
+        // 初始化游戏
+        function initGame() {
+            startScreen.style.display = 'none';
+            gameState = {
+                score: 0,
+                coins: 0,
+                lives: 3,
+                currentQuestion: 0,
+                currentBlockIndex: 0,
+                isJumping: false,
+                isAnswering: false,
+                gameStarted: true
+            };
+            updateHUD();
+            loadQuestion();
+            moveToBlock(0);
+        }
+
+        // 加载题目
+        function loadQuestion() {
+            if (gameState.currentQuestion >= questions.length) {
+                endGame(true);
+                return;
+            }
+
+            const q = questions[gameState.currentQuestion];
+            questionText.textContent = q.question;
+
+            optionsContainer.innerHTML = '';
+            q.options.forEach((opt, i) => {
+                const block = document.createElement('div');
+                block.className = 'optionBlock';
+                block.innerHTML = `
+                    <div class="label">${String.fromCharCode(65 + i)}</div>
+                    <div class="text">${opt}</div>
+                `;
+                optionsContainer.appendChild(block);
+            });
+
+            gameState.isAnswering = true;
+        }
+
+        // 移动马里奥到指定砖块下方（网格对齐）
+        function moveToBlock(index) {
+            if (index < 0 || index > 3 || gameState.isJumping) return;
+
+            gameState.currentBlockIndex = index;
+            const centerX = getBlockCenterX(index);
+            mario.style.left = (centerX - 20) + 'px'; // 20 是半宽
+        }
+
+        // 计算第 index 个砖块的中心 X 坐标
+        function getBlockCenterX(index) {
+            const containerWidth = 4 * BLOCK_WIDTH + 3 * BLOCK_SPACING;
+            const startX = (window.innerWidth - containerWidth) / 2;
+            return startX + index * (BLOCK_WIDTH + BLOCK_SPACING) + BLOCK_WIDTH / 2;
+        }
+
+        // 跳跃并答题
+        function jump() {
+            if (!gameState.gameStarted || gameState.isJumping || !gameState.isAnswering) return;
+
+            gameState.isJumping = true;
+            mario.classList.add('jump');
+
+            setTimeout(() => {
+                checkAnswer();
+            }, 400);
+
+            setTimeout(() => {
+                mario.classList.remove('jump');
+                gameState.isJumping = false;
+            }, 800);
+        }
+
+        // 检查答案
+        function checkAnswer() {
+            const currentIndex = gameState.currentBlockIndex;
+            const selectedOption = String.fromCharCode(65 + currentIndex); // A~D
+            const currentQ = questions[gameState.currentQuestion];
+
+            const blocks = document.querySelectorAll('.optionBlock');
+            const selectedBlock = blocks[currentIndex];
+
+            if (selectedOption === currentQ.correct) {
+                // 正确
+                selectedBlock.classList.add('correct');
+                gameState.score += 100;
+                gameState.coins += 1;
+                updateHUD();
+
+                // 生成金币动画
+                const rect = selectedBlock.getBoundingClientRect();
+                spawnCoin(rect.left + rect.width/2, rect.top);
+
+                showFeedback(true, `✓ 正确！\n${currentQ.options[currentIndex]}`);
+                setTimeout(nextQuestion, 1500);
+            } else {
+                // 错误
+                selectedBlock.classList.add('wrong');
+                gameState.lives -= 1;
+                updateHUD();
+
+                showFeedback(false, `✗ 错了！正确答案：${currentQ.correct} - ${currentQ.options[getCorrectIndex(currentQ)]}`);
+
+                mario.classList.add('die');
+                if (gameState.lives <= 0) {
+                    setTimeout(() => {
+                        endGame(false);
+                    }, 1000);
+                } else {
+                    setTimeout(() => {
+                        mario.classList.remove('die');
+                        nextQuestion();
+                    }, 1500);
+                }
+            }
+        }
+
+        // 生成金币动画
+        function spawnCoin(x, y) {
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            coin.style.left = (x - 15) + 'px';
+            coin.style.top = (y - 15) + 'px';
+            document.getElementById('gameContainer').appendChild(coin);
+
+            setTimeout(() => {
+                coin.remove();
+            }, 1500);
+        }
+
+        // 显示反馈
+        function showFeedback(isCorrect, message) {
+            const feedback = document.createElement('div');
+            feedback.className = `feedback ${isCorrect ? '' : 'error'}`;
+            feedback.innerHTML = message.replace('\n', '<br>');
+            document.body.appendChild(feedback);
+
+            setTimeout(() => {
+                feedback.remove();
+            }, 1500);
+        }
+
+        // 获取正确答案索引
+        function getCorrectIndex(q) {
+            return q.correct.charCodeAt(0) - 65;
+        }
+
+        // 下一题
+        function nextQuestion() {
+            gameState.currentQuestion++;
+            loadQuestion();
+            moveToBlock(0); // 重置到第一个选项
+        }
+
+        // 更新HUD
+        function updateHUD() {
+            scoreElement.textContent = gameState.score;
+            coinsElement.textContent = gameState.coins;
+            livesElement.textContent = '❤️'.repeat(gameState.lives);
+        }
+
+        // 游戏结束
+        function endGame(isWin) {
+            gameState.gameStarted = false;
+
+            const endScreen = document.createElement('div');
+            endScreen.className = 'endScreen';
+            endScreen.innerHTML = `
+                <h1>${isWin ? '🎉 通关成功！' : '💀 游戏结束'}</h1>
+                <div class="stats">
+                    最终得分: ${gameState.score}<br>
+                    获得金币: ${gameState.coins}<br>
+                    ${isWin ? '你是最棒的水管工！' : '再试一次吧！'}
+                </div>
+                <button class="startBtn" onclick="location.reload()">重新开始</button>
+            `;
+            document.body.appendChild(endScreen);
+        }
+
+        // 绑定事件
+        startBtn.addEventListener('click', initGame);
+
+        leftBtn.addEventListener('click', () => {
+            moveToBlock(gameState.currentBlockIndex - 1);
+        });
+
+        rightBtn.addEventListener('click', () => {
+            moveToBlock(gameState.currentBlockIndex + 1);
+        });
+
+        jumpBtn.addEventListener('click', jump);
+
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.gameStarted) return;
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    moveToBlock(gameState.currentBlockIndex - 1);
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    moveToBlock(gameState.currentBlockIndex + 1);
+                    break;
+                case 'ArrowUp':
+                case ' ':
+                case 'w':
+                case 'W':
+                    jump();
+                    break;
+            }
+        });
+
+        // 初始化HUD
+        updateHUD();
+    </script>
+</body>
+</html>

@@ -20,6 +20,13 @@
       "description": "记录和管理学生课堂表现积分，支持加减分操作",
       "icon": "Trophy",
       "path": "./tools/classroom_scoreboard/index.html"
+    },
+    {
+      "id": "testgamer",
+      "name": "互动题卡",
+      "description": "互动题卡，惊艳课堂，马里奥风格，多色彩主题",
+      "icon": "Trophy",
+      "path": "./tools/testgamer/index.html"
     }
   ]
 }

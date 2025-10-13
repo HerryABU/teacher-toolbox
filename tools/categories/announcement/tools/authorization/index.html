@@ -1,100 +1,371 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>特别鸣谢 - 开源教师工具箱</title>
-  <!-- 样式保持不变 -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>特别鸣谢与开源历程 - 教师工具箱</title>
+  <!-- AOS 动画库（轻量，仅 13KB） -->
+  <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
   <style>
-    /* 保持原有所有样式不变 */
-    body, html { margin: 0; padding: 0; font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; min-height: 100vh; display: flex; flex-direction: column; background-color: #f9f9fb; }
-    #app { flex: 1; padding: 40px 20px; }
-    .container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
-    h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; font-size: 28px; }
-    .thank-card { margin-bottom: 24px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); transition: transform 0.3s ease; background: white; }
-    .thank-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); }
-    .thank-header { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; padding: 16px 20px; font-weight: bold; border-radius: 12px 12px 0 0; }
-    .thank-body { padding: 20px; }
-    .thank-role { font-weight: 600; color: #1f2d3d; margin-bottom: 8px; }
-    .thank-contribution { color: #666; line-height: 1.8; }
-    .loading-spinner { display: flex; justify-content: center; margin: 30px 0; }
-    .error-tip { text-align: center; color: #e74c3c; font-size: 16px; margin: 30px 0; padding: 20px; background: #ffeeee; border-radius: 8px; }
-    .empty-tip { text-align: center; color: #7f8c8d; font-size: 16px; margin: 30px 0; padding: 20px; background: #f8f8f8; border-radius: 8px; }
-    footer { text-align: center; padding: 18px; color: #7f8c8d; font-size: 14px; background-color: #f8f8f8; border-top: 1px solid #eee; margin-top: auto; }
-    @media (max-width: 600px) { h1 { font-size: 24px; } .container { padding: 0 16px; } }
+    :root {
+      --primary: #409EFF;
+      --secondary: #6a11cb;
+      --bg: #f9f9fb;
+      --card-bg: #ffffff;
+      --text: #2c3e50;
+      --text-light: #666;
+      --border: #eaeefb;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    #app {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, var(--secondary), var(--primary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      font-weight: 800;
+    }
+    .subtitle {
+      color: var(--text-light);
+      font-size: 1.1rem;
+    }
+
+    /* 鸣谢卡片区 */
+    .thanks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+    .thank-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+      border: 1px solid var(--border);
+    }
+    .thank-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 30px rgba(64, 158, 255, 0.2);
+    }
+    .card-header {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--primary);
+    }
+    .name-role {
+      flex: 1;
+    }
+    .name {
+      font-weight: 700;
+      font-size: 1.2rem;
+      margin-bottom: 4px;
+    }
+    .role {
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .card-body {
+      padding: 0 20px 20px;
+    }
+    .contribution {
+      color: var(--text-light);
+      margin: 12px 0;
+      font-size: 0.95rem;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .tag {
+      background: rgba(64, 158, 255, 0.1);
+      color: var(--primary);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    /* 时间线区 */
+    .timeline-container {
+      position: relative;
+      margin-top: 40px;
+    }
+    .timeline-container::before {
+      content: '';
+      position: absolute;
+      left: 32px;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(to bottom, var(--primary), var(--secondary));
+      border-radius: 2px;
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 40px;
+      padding-left: 70px;
+    }
+    .timeline-icon {
+      position: absolute;
+      left: 18px;
+      top: 8px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: white;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .timeline-date {
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 6px;
+      font-size: 1.1rem;
+    }
+    .timeline-title {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .timeline-desc {
+      color: var(--text-light);
+      line-height: 1.7;
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px 0 20px;
+      color: #7f8c8d;
+      font-size: 0.95rem;
+      margin-top: 60px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .timeline-container::before { left: 24px; }
+      .timeline-item { padding-left: 60px; }
+      .timeline-icon { left: 12px; width: 32px; height: 32px; font-size: 1rem; }
+      h1 { font-size: 2rem; }
+    }
   </style>
 </head>
 <body>
   <div id="app">
-    <div class="container">
-      <h1>✨ 特别鸣谢</h1>
+    <header data-aos="fade-down">
+      <h1>✨ 特别鸣谢与开源历程</h1>
+      <p class="subtitle">感谢每一位让教师工具箱变得更好的你</p>
+    </header>
 
-      <!-- 加载状态 -->
-      <div v-if="loading" class="loading-spinner">
-        <div class="spinner">加载中...</div>
-      </div>
+    <!-- 鸣谢卡片 -->
+    <div class="thanks-grid" id="thanks-grid">
+      <!-- 由 JS 动态生成 -->
+    </div>
 
-      <!-- 显示鸣谢列表 -->
-      <div v-else-if="!error && thanksData.length > 0">
-        <div v-for="person in thanksData" :key="person.name" class="thank-card">
-          <div class="thank-header">
-            ★ {{ person.name }}
-          </div>
-          <div class="thank-body">
-            <p class="thank-role">角色：{{ person.role }}</p>
-            <p class="thank-contribution">贡献：{{ person.contribution }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 数据为空状态 -->
-      <div v-else-if="!loading && !error" class="empty-tip">
-        暂无鸣谢信息
-      </div>
-
-      <!-- 错误状态 -->
-      <div v-else class="error-tip">
-        {{ error || '加载鸣谢信息时出错' }}
+    <!-- 时间线 -->
+    <div class="timeline-container" data-aos="fade-up">
+      <div id="timeline-list">
+        <!-- 由 JS 动态生成 -->
       </div>
     </div>
+
+    <footer>
+      © <span id="year"></span> 开源教师工具箱 · 数据完全本地化 · 欢迎贡献
+    </footer>
   </div>
 
-  <!-- 页脚 -->
-  <footer id="dynamic-footer">
-    © <span id="current-year"></span> 开源教师工具箱 · 感谢每一位贡献者
-  </footer>
-
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- AOS 动画库 -->
+  <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
   <script>
-    // 动态设置年份
-    document.getElementById('current-year').textContent = new Date().getFullYear();
+    // 设置年份
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-    const { createApp, ref, onMounted } = Vue;
-    
-    createApp({
-      setup() {
-        const thanksData = ref([]); // 初始为空数组
-        const loading = ref(true);
-        const error = ref('');
+    // 初始化 AOS 动画
+    AOS.init({
+      duration: 800,
+      once: true,
+      easing: 'ease-out-cubic'
+    });
 
-        onMounted(async () => {
-          try {
-            const response = await fetch('./thanks-data.json');
-            if (!response.ok) {
-              throw new Error(`HTTP错误! 状态码: ${response.status}`);
+    // 格式化日期：2024-08-15 → 2024年8月15日
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+    }
+
+    // 安全获取头像：支持 null、undefined、空字符串
+    function getAvatar(name, avatarUrl) {
+      if (!avatarUrl) {
+        const firstChar = (name || '')[0] || '?';
+        return `https://via.placeholder.com/60/409EFF/FFFFFF?text=${encodeURIComponent(firstChar)}`;
+      }
+      return avatarUrl;
+    }
+
+    // 安全获取 GitHub 链接：仅当为非空字符串时返回
+    function getGithubUrl(github) {
+      return (typeof github === 'string' && github.trim() !== '') ? github : null;
+    }
+
+    // 渲染鸣谢卡片
+    function renderThanks(contributors) {
+      const container = document.getElementById('thanks-grid');
+      container.innerHTML = '';
+      
+      contributors.forEach(person => {
+        const githubUrl = getGithubUrl(person.github);
+        const avatarSrc = getAvatar(person.name, person.avatar);
+        
+        const card = document.createElement('div');
+        card.className = 'thank-card';
+        card.setAttribute('data-aos', 'fade-up');
+        card.setAttribute('data-aos-delay', Math.floor(Math.random() * 300));
+        
+        const avatarHtml = githubUrl
+          ? `<img src="${avatarSrc}" alt="${person.name}" class="avatar" onclick="window.open('${githubUrl}', '_blank')" style="cursor: pointer;">`
+          : `<img src="${avatarSrc}" alt="${person.name}" class="avatar" style="cursor: default;">`;
+        
+        card.innerHTML = `
+          <div class="card-header">
+            ${avatarHtml}
+            <div class="name-role">
+              <div class="name">${person.name}</div>
+              <div class="role">${person.role}</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <p class="contribution">${person.contribution}</p>
+            ${person.tags && Array.isArray(person.tags) && person.tags.length > 0 ? `
+              <div class="tags">
+                ${person.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 渲染时间线
+    function renderTimeline(items) {
+      const container = document.getElementById('timeline-list');
+      container.innerHTML = '';
+      
+      items.forEach((item, index) => {
+        const el = document.createElement('div');
+        el.className = 'timeline-item';
+        el.setAttribute('data-aos', 'fade-left');
+        el.setAttribute('data-aos-delay', index * 100);
+        
+        if (item.type === 'contributor') {
+          el.innerHTML = `
+            <div class="timeline-icon" style="background: linear-gradient(135deg, #6a11cb, #2575fc);">
+              👤
+            </div>
+            <div class="timeline-date">${formatDate(item.date)}</div>
+            <div class="timeline-title">${item.name} · ${item.role}</div>
+            <div class="timeline-desc">${item.contribution}</div>
+          `;
+        } else if (item.type === 'milestone') {
+          el.innerHTML = `
+            <div class="timeline-icon" style="background: ${item.color || '#409EFF'};">
+              ${item.icon || '⭐'}
+            </div>
+            <div class="timeline-date">${formatDate(item.date)}</div>
+            <div class="timeline-title">${item.title}</div>
+            <div class="timeline-desc">${item.description}</div>
+          `;
+        }
+        container.appendChild(el);
+      });
+    }
+
+    // 主加载函数
+    async function loadData() {
+      try {
+        const res = await fetch('./thanks-data.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const rawData = await res.json();
+        
+        // 过滤有效数据
+        const validData = rawData.filter(item => 
+          item.type && item.date && 
+          (item.type === 'milestone' ? item.title : item.name)
+        );
+        
+        // 按日期倒序
+        const sorted = validData.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        // 聚合贡献者（同一人多条贡献合并）
+        const contributorMap = {};
+        sorted.forEach(item => {
+          if (item.type === 'contributor') {
+            if (!contributorMap[item.name]) {
+              contributorMap[item.name] = { ...item, contributions: [] };
             }
-            thanksData.value = await response.json();
-          } catch (err) {
-            console.error('加载鸣谢数据失败:', err);
-            error.value = '无法加载鸣谢数据: ' + err.message;
-          } finally {
-            loading.value = false;
+            contributorMap[item.name].contributions.push(item.contribution);
           }
         });
-
-        return { thanksData, loading, error };
+        
+        const contributors = Object.values(contributorMap).map(p => ({
+          ...p,
+          contribution: p.contributions.join('；')
+        }));
+        
+        renderThanks(contributors);
+        renderTimeline(sorted);
+        
+        // 刷新 AOS（因内容动态生成）
+        setTimeout(() => {
+          AOS.refresh();
+        }, 100);
+      } catch (err) {
+        console.error('加载鸣谢数据失败:', err);
+        document.getElementById('thanks-grid').innerHTML = `
+          <div style="grid-column:1/-1; text-align:center; color:#e74c3c; padding: 40px;">
+            ❌ 无法加载鸣谢数据，请检查 <code>thanks-data.json</code> 文件是否存在且格式正确。
+          </div>
+        `;
       }
-    }).mount('#app');
+    }
+
+    // 启动
+    loadData();
   </script>
 </body>
 </html>

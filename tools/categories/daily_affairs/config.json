@@ -27,6 +27,13 @@
       "description": "管理班级物品发放记录，支持物品库存管理",
       "icon": "Box",
       "path": "./tools/item_distribution/index.html"
+    },
+    {
+      "id": "tiaoke",
+      "name": "调课",
+      "description": "调课",
+      "icon": "Box",
+      "path": "./tools/tiaoke/index.html"
     }
   ]
 }

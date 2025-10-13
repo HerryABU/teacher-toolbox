@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>经典游戏答题冒险</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Helvetica Neue", "Arial", sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            transition: background 0.8s ease;
+        }
+
+        #gameContainer {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+            z-index: 100;
+        }
+
+        #hud div {
+            margin-bottom: 5px;
+        }
+
+        /* 音效开关 */
+        #soundToggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            z-index: 100;
+            text-shadow: 2px 2px 3px rgba(0,0,0,0.6);
+        }
+
+        /* 题目区域 */
+        #questionArea {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 90%;
+            text-align: center;
+            font-size: 18px;
+            line-height: 1.6;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 20;
+            transition: all 0.5s ease;
+        }
+
+        /* 控制按钮 */
+        #controls {
+            position: absolute;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .controlBtn {
+            width: 70px;
+            height: 70px;
+            background: rgba(255,255,255,0.3);
+            border: 3px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+            user-select: none;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+
+        .controlBtn:active {
+            background: rgba(255,255,255,0.5);
+            transform: scale(0.95);
+        }
+
+        /* 下一题按钮 */
+        #nextBtn {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 40px;
+            background: #00A800;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 100;
+            display: none;
+        }
+
+        #nextBtn:hover {
+            background: #00C800;
+            transform: scale(1.05);
+        }
+
+        /* 答案反馈面板 */
+        #answerFeedback {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 200;
+            display: none;
+            max-width: 80%;
+        }
+
+        #answerFeedback h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        #answerFeedback p {
+            font-size: 18px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        /* 反馈按钮 */
+        .feedbackBtn {
+            padding: 12px 30px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .continueBtn {
+            background: #00A800;
+            color: white;
+        }
+
+        .continueBtn:hover {
+            background: #00C800;
+        }
+
+        .retryBtn {
+            background: #FF6B35;
+            color: white;
+        }
+
+        .retryBtn:hover {
+            background: #FF8552;
+        }
+
+        /* 开始界面 */
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            color: white;
+        }
+
+        #startScreen h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .startBtn {
+            padding: 15px 40px;
+            background: #FF6B35;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .startBtn:hover {
+            background: #FF8552;
+            transform: scale(1.05);
+        }
+
+        /* 结束界面 */
+        .endScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 400;
+            color: white;
+        }
+
+        .endScreen h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+
+        .endScreen .stats {
+            font-size: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* 通用动画 */
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-150px) scale(0.3); opacity: 0; }
+        }
+
+        /* 黄金矿工特有动画 */
+        @keyframes swing {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(20deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        /* 星际射击特有动画 */
+        @keyframes flyLeft {
+            0% { transform: translateX(100vw); }
+            100% { transform: translateX(-100px); }
+        }
+
+        /* 马里奥特有动画 */
+        @keyframes bump {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            #questionArea { font-size: 16px; padding: 15px; }
+            .controlBtn { width: 60px; height: 60px; font-size: 24px; }
+            #nextBtn { padding: 12px 30px; font-size: 16px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- 游戏对象容器 -->
+        <div id="gameObjects"></div>
+
+        <!-- HUD -->
+        <div id="hud">
+            <div>分数: <span id="score">0</span></div>
+            <div>收集: <span id="rewards">0</span></div>
+            <div>生命: <span id="lives">❤️❤️❤️</span></div>
+        </div>
+
+        <!-- 音效开关 -->
+        <div id="soundToggle">🔊 音效: 开</div>
+
+        <!-- 题目区 -->
+        <div id="questionArea">
+            <div id="questionText">点击开始游戏</div>
+        </div>
+
+        <!-- 控制按钮 -->
+        <div id="controls">
+            <div class="controlBtn" id="leftBtn">←</div>
+            <div class="controlBtn" id="actionBtn">↑</div>
+            <div class="controlBtn" id="rightBtn">→</div>
+        </div>
+
+        <!-- 下一题按钮 -->
+        <button id="nextBtn">下一题</button>
+
+        <!-- 答案反馈面板 -->
+        <div id="answerFeedback">
+            <h3 id="feedbackTitle">答案反馈</h3>
+            <p id="feedbackMessage">这里是反馈信息</p>
+            <div>
+                <button class="feedbackBtn continueBtn" id="continueBtn">继续</button>
+                <button class="feedbackBtn retryBtn" id="retryBtn">重试本题</button>
+            </div>
+        </div>
+
+        <!-- 开始界面 -->
+        <div id="startScreen">
+            <h1>🎮 经典游戏答题冒险 🕹️</h1>
+            <p style="color:#ccc;margin-bottom:30px;">每个主题都是原版游戏玩法！</p>
+            <button class="startBtn" id="startBtn">开始冒险</button>
+        </div>
+    </div>
+
+    <script>
+        // =====================
+        // 🔊 音效系统
+        // =====================
+        const soundEnabled = {
+            enabled: true,
+            toggle: function() {
+                this.enabled = !this.enabled;
+                document.getElementById('soundToggle').textContent = `🔊 音效: ${this.enabled ? '开' : '关'}`;
+            },
+            play: function(audio) {
+                if (!this.enabled || !audio) return;
+                // 创建新的音频实例，避免重叠
+                const sound = audio.cloneNode();
+                sound.volume = 0.5;
+                sound.play().catch(e => console.log("Audio play failed:", e));
+            }
+        };
+
+        // 预加载音效
+        const sounds = {
+            // 马里奥音效
+            marioJump: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/Jump.wav'),
+            marioCoin: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/Ring.wav'),
+            marioBump: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/Bump.wav'),
+            
+            // 星际射击音效
+            shoot: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/Shoot.wav'),
+            explosion: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/Explosion.wav'),
+            hit: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/Hit.wav'),
+            
+            // 黄金矿工音效
+            throwHook: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/Spring.wav'),
+            grab: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/PowerUp.wav'),
+            retract: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/Jump.wav'),
+            
+            // 通用音效
+            correct: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/1-Up.wav'),
+            wrong: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/LoseLife.wav'),
+            next: new Audio('https://cdn.jsdelivr.net/gh/ajayyy/Sonic-1-Genesis-Sound-Effects@master/Menu.wav')
+        };
+
+        // =====================
+        // 🎮 主题游戏系统（带音效）
+        // =====================
+        const themes = {
+            mario: {
+                name: "超级马里奥",
+                background: "linear-gradient(to bottom, #5C94FC 0%, #5C94FC 80%, #C84C0C 80%)",
+                init: function() {
+                    this.createScene();
+                },
+                createScene: function() {
+                    const gameObjects = document.getElementById('gameObjects');
+                    gameObjects.innerHTML = '';
+                    
+                    // 创建地面
+                    const ground = document.createElement('div');
+                    ground.style.cssText = "position:absolute;bottom:0;width:100%;height:100px;background:linear-gradient(to bottom, #8B7355 0%, #8B7355 10%, #5C4033 10%);border-top:5px solid #3A2A1A;";
+                    gameObjects.appendChild(ground);
+
+                    // 创建马里奥
+                    const mario = document.createElement('div');
+                    mario.id = 'mario';
+                    mario.style.cssText = `
+                        position: absolute;
+                        bottom: 100px;
+                        left: 150px;
+                        width: 40px;
+                        height: 40px;
+                        z-index: 10;
+                        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    `;
+                    mario.innerHTML = `
+                        <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="20" cy="15" r="12" fill="#FF6B35"/>
+                            <rect x="10" y="20" width="20" height="15" fill="red" rx="2"/>
+                            <rect x="12" y="35" width="6" height="5" fill="#333" rx="1"/>
+                            <rect x="22" y="35" width="6" height="5" fill="#333" rx="1"/>
+                            <circle cx="16" cy="12" r="2" fill="#fff"/>
+                            <circle cx="24" cy="12" r="2" fill="#fff"/>
+                            <circle cx="17" cy="12" r="1" fill="#000"/>
+                            <circle cx="25" cy="12" r="1" fill="#000"/>
+                            <rect x="18" y="18" width="4" height="2" fill="#000" rx="1"/>
+                        </svg>
+                    `;
+                    gameObjects.appendChild(mario);
+
+                    // 创建管道
+                    const pipe1 = document.createElement('div');
+                    pipe1.style.cssText = "position:absolute;width:80px;height:120px;bottom:100px;left:400px;background:linear-gradient(to right,#00A800,#00D800,#008400);border:3px solid #003600;border-radius:5px 5px 0 0;";
+                    pipe1.innerHTML = "<div style='position:absolute;top:-25px;left:-15px;width:110px;height:50px;background:inherit;border:3px solid #003600;border-radius:5px;'></div>";
+                    gameObjects.appendChild(pipe1);
+
+                    // 创建问号砖块和普通砖块
+                    const blocksContainer = document.createElement('div');
+                    blocksContainer.className = 'blocksContainer';
+                    blocksContainer.style.cssText = "position:absolute;top:220px;left:200px;display:flex;gap:10px;z-index:15;";
+                    gameObjects.appendChild(blocksContainer);
+
+                    // 创建4个砖块（混合问号块和普通块）
+                    for(let i = 0; i < 4; i++) {
+                        const block = document.createElement('div');
+                        block.className = 'optionBlock';
+                        block.dataset.index = i;
+                        block.style.cssText = `
+                            width: 50px;
+                            height: 50px;
+                            background: ${i % 2 === 0 ? 'linear-gradient(to bottom, #FFB84D, #CC8E33)' : 'linear-gradient(to bottom, #D4AF37, #B8860B)'};
+                            border: 2px solid #663300;
+                            border-radius: 3px;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            font-family: "Helvetica Neue", Arial, sans-serif;
+                            color: #333;
+                            cursor: default;
+                            position: relative;
+                        `;
+                        if (i % 2 === 0) {
+                            block.innerHTML = `
+                                <div class="label" style="font-size:18px;font-weight:bold;">?</div>
+                                <div class="hiddenText" style="font-size:10px;margin-top:2px;visibility:hidden;">${String.fromCharCode(65 + i)}</div>
+                            `;
+                        } else {
+                            block.innerHTML = `
+                                <div class="label" style="font-size:18px;font-weight:bold;">${String.fromCharCode(65 + i)}</div>
+                                <div class="text" style="font-size:10px;margin-top:2px;"></div>
+                            `;
+                        }
+                        blocksContainer.appendChild(block);
+                    }
+
+                    // 创建云朵
+                    const cloud1 = document.createElement('div');
+                    cloud1.style.cssText = "position:absolute;width:100px;height:40px;top:80px;left:300px;background:white;border-radius:50px;opacity:0.8;";
+                    cloud1.innerHTML = "<div style='position:absolute;width:50px;height:50px;top:-25px;left:10px;background:white;border-radius:50px;'></div>";
+                    gameObjects.appendChild(cloud1);
+
+                    const cloud2 = document.createElement('div');
+                    cloud2.style.cssText = "position:absolute;width:80px;height:35px;top:60px;right:200px;background:white;border-radius:50px;opacity:0.8;";
+                    cloud2.innerHTML = "<div style='position:absolute;width:60px;height:40px;top:-20px;right:15px;background:white;border-radius:50px;'></div>";
+                    gameObjects.appendChild(cloud2);
+                },
+                updateBlocks: function(options) {
+                    const blocks = document.querySelectorAll('.optionBlock');
+                    blocks.forEach((block, i) => {
+                        if (i % 2 === 1) { // 普通块显示文字
+                            block.querySelector('.text').textContent = options[i];
+                        } else { // 问号块隐藏文字
+                            block.querySelector('.hiddenText').textContent = options[i];
+                        }
+                    });
+                },
+                move: function(direction) {
+                    const mario = document.getElementById('mario');
+                    let currentLeft = parseInt(mario.style.left) || 150;
+                    
+                    if (direction === 'left') {
+                        currentLeft = Math.max(100, currentLeft - 60);
+                    } else if (direction === 'right') {
+                        currentLeft = Math.min(window.innerWidth - 140, currentLeft + 60);
+                    }
+                    
+                    mario.style.left = currentLeft + 'px';
+                    
+                    // 计算当前在哪个砖块下方
+                    const blocks = document.querySelectorAll('.optionBlock');
+                    const marioRect = mario.getBoundingClientRect();
+                    const marioCenterX = marioRect.left + marioRect.width/2;
+                    
+                    for(let i = 0; i < blocks.length; i++) {
+                        const blockRect = blocks[i].getBoundingClientRect();
+                        if (marioCenterX >= blockRect.left && marioCenterX <= blockRect.right) {
+                            return i;
+                        }
+                    }
+                    
+                    return 0;
+                },
+                action: function() {
+                    const mario = document.getElementById('mario');
+                    mario.classList.add('jump');
+                    soundEnabled.play(sounds.marioJump); // 播放跳跃音效
+                    
+                    setTimeout(() => {
+                        mario.classList.remove('jump');
+                    }, 800);
+                    
+                    // 跳跃时检测碰撞
+                    setTimeout(() => {
+                        const currentIndex = this.getCurrentBlockIndex();
+                        const event = new CustomEvent('optionSelected', {detail: {index: currentIndex}});
+                        document.dispatchEvent(event);
+                    }, 400);
+                    
+                    return -1;
+                },
+                getCurrentBlockIndex: function() {
+                    const mario = document.getElementById('mario');
+                    const blocks = document.querySelectorAll('.optionBlock');
+                    const marioRect = mario.getBoundingClientRect();
+                    const marioCenterX = marioRect.left + marioRect.width/2;
+                    
+                    for(let i = 0; i < blocks.length; i++) {
+                        const blockRect = blocks[i].getBoundingClientRect();
+                        if (marioCenterX >= blockRect.left && marioCenterX <= blockRect.right) {
+                            return i;
+                        }
+                    }
+                    
+                    return 0;
+                },
+                animateCorrect: function(index) {
+                    const blocks = document.querySelectorAll('.optionBlock');
+                    if (blocks[index]) {
+                        blocks[index].style.animation = "bump 0.6s ease-out";
+                        // 显示隐藏的文字
+                        const hiddenText = blocks[index].querySelector('.hiddenText');
+                        if (hiddenText) {
+                            hiddenText.style.visibility = "visible";
+                            hiddenText.style.color = "#00A800";
+                            hiddenText.style.fontWeight = "bold";
+                        }
+                        soundEnabled.play(sounds.marioCoin); // 播放金币音效
+                    }
+                },
+                animateWrong: function(index) {
+                    const blocks = document.querySelectorAll('.optionBlock');
+                    if (blocks[index]) {
+                        blocks[index].style.animation = "bump 0.6s ease-out";
+                        blocks[index].style.opacity = "0.5";
+                        // 显示隐藏的文字
+                        const hiddenText = blocks[index].querySelector('.hiddenText');
+                        if (hiddenText) {
+                            hiddenText.style.visibility = "visible";
+                            hiddenText.style.color = "#FF0000";
+                            hiddenText.style.fontWeight = "bold";
+                        }
+                        soundEnabled.play(sounds.marioBump); // 播放碰撞音效
+                    }
+                },
+                spawnReward: function(x, y) {
+                    const reward = document.createElement('div');
+                    reward.className = 'reward';
+                    reward.style.cssText = `
+                        position: absolute;
+                        left: ${x}px;
+                        top: ${y}px;
+                        width: 30px;
+                        height: 30px;
+                        background: radial-gradient(circle, #FFD700, #FFA500);
+                        border: 2px solid #FFB84D;
+                        border-radius: 50%;
+                        z-index: 50;
+                        animation: floatUp 1.5s ease-out forwards;
+                    `;
+                    document.getElementById('gameContainer').appendChild(reward);
+                    
+                    setTimeout(() => {
+                        reward.remove();
+                    }, 1500);
+                }
+            },
+
+            space: {
+                name: "星际射击",
+                background: "linear-gradient(to bottom, #000033 0%, #000066 100%)",
+                bullets: [],
+                enemies: [],
+                init: function() {
+                    this.createScene();
+                },
+                createScene: function() {
+                    const gameObjects = document.getElementById('gameObjects');
+                    gameObjects.innerHTML = '';
+                    
+                    // 创建地面（太空底部）
+                    const ground = document.createElement('div');
+                    ground.style.cssText = "position:absolute;bottom:0;width:100%;height:80px;background:linear-gradient(to bottom, #4B0082 0%, #2E0854 100%);border-top:5px solid #000;";
+                    gameObjects.appendChild(ground);
+
+                    // 创建飞船（左下角）
+                    const ship = document.createElement('div');
+                    ship.id = 'ship';
+                    ship.style.cssText = `
+                        position: absolute;
+                        bottom: 100px;
+                        left: 100px;
+                        width: 60px;
+                        height: 40px;
+                        z-index: 10;
+                        transition: left 0.2s ease;
+                    `;
+                    ship.innerHTML = `
+                        <svg viewBox="0 0 60 40" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M30,5 L10,25 L20,25 L20,35 L40,35 L40,25 L50,25 Z" fill="#C0C0C0" stroke="#696969" stroke-width="2"/>
+                            <circle cx="30" cy="15" r="3" fill="#FF4500"/>
+                            <rect x="27" y="35" width="6" height="3" fill="#FF4500"/>
+                            <polygon points="15,25 5,30 15,35" fill="#FF6347"/>
+                            <polygon points="45,25 55,30 45,35" fill="#FF6347"/>
+                        </svg>
+                    `;
+                    gameObjects.appendChild(ship);
+
+                    // 创建星星背景
+                    for(let i = 0; i < 150; i++) {
+                        const star = document.createElement('div');
+                        star.style.cssText = `
+                            position: absolute;
+                            width: ${Math.random() * 2 + 1}px;
+                            height: ${Math.random() * 2 + 1}px;
+                            top: ${Math.random() * 100}%;
+                            left: ${Math.random() * 100}%;
+                            background: white;
+                            border-radius: 50%;
+                            box-shadow: 0 0 ${Math.random() * 3 + 1}px white;
+                            animation: twinkle ${Math.random() * 3 + 2}s infinite;
+                        `;
+                        gameObjects.appendChild(star);
+                    }
+
+                    // 创建行星（远处）
+                    const planet = document.createElement('div');
+                    planet.style.cssText = `
+                        position: absolute;
+                        width: 120px;
+                        height: 120px;
+                        top: 150px;
+                        right: 100px;
+                        background: radial-gradient(circle, #FF6347, #8B0000);
+                        border-radius: 50%;
+                        box-shadow: 0 0 30px #FF6347;
+                        animation: rotate 40s linear infinite;
+                    `;
+                    gameObjects.appendChild(planet);
+
+                    // 创建敌人（从右向左飞行的选项）
+                    const enemyContainer = document.createElement('div');
+                    enemyContainer.className = 'enemyContainer';
+                    enemyContainer.style.cssText = "position:absolute;top:180px;right:0;width:100%;height:200px;overflow:hidden;z-index:5;";
+                    gameObjects.appendChild(enemyContainer);
+
+                    // 创建4个敌人
+                    const options = ["A", "B", "C", "D"]; // 临时占位
+                    for(let i = 0; i < 4; i++) {
+                        const enemy = document.createElement('div');
+                        enemy.className = 'spaceEnemy';
+                        enemy.dataset.index = i;
+                        enemy.style.cssText = `
+                            position: absolute;
+                            width: 60px;
+                            height: 60px;
+                            background: radial-gradient(circle, #4682B4, #000080);
+                            border: 2px solid #0000CD;
+                            border-radius: 50%;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            font-family: "Helvetica Neue", Arial, sans-serif;
+                            color: white;
+                            cursor: default;
+                            top: ${100 + i * 70}px;
+                            right: -100px;
+                            box-shadow: 0 0 15px rgba(70,130,180,0.5);
+                            animation: flyLeft ${8 + i * 2}s linear infinite;
+                            animation-delay: ${i * 1}s;
+                        `;
+                        enemy.innerHTML = `
+                            <div class="label" style="font-size:20px;font-weight:bold;">${options[i]}</div>
+                            <div class="text" style="font-size:10px;margin-top:2px;text-align:center;"></div>
+                        `;
+                        enemyContainer.appendChild(enemy);
+                        this.enemies.push(enemy);
+                    }
+                },
+                updateEnemies: function(options) {
+                    const enemyElements = document.querySelectorAll('.spaceEnemy');
+                    enemyElements.forEach((enemy, i) => {
+                        enemy.querySelector('.text').textContent = options[i];
+                    });
+                },
+                move: function(direction) {
+                    const ship = document.getElementById('ship');
+                    let currentLeft = parseInt(ship.style.left) || 100;
+                    
+                    if (direction === 'left') {
+                        currentLeft = Math.max(50, currentLeft - 20);
+                    } else if (direction === 'right') {
+                        currentLeft = Math.min(window.innerWidth - 160, currentLeft + 20);
+                    }
+                    
+                    ship.style.left = currentLeft + 'px';
+                    return this.getCurrentTargetIndex();
+                },
+                action: function() {
+                    const ship = document.getElementById('ship');
+                    const shipRect = ship.getBoundingClientRect();
+                    
+                    // 创建子弹
+                    const bullet = document.createElement('div');
+                    bullet.className = 'bullet';
+                    bullet.style.cssText = `
+                        position: absolute;
+                        left: ${shipRect.left + shipRect.width - 5}px;
+                        top: ${shipRect.top + 15}px;
+                        width: 8px;
+                        height: 4px;
+                        background: #FF4500;
+                        border-radius: 2px;
+                        z-index: 20;
+                        box-shadow: 0 0 10px #FF4500;
+                    `;
+                    document.getElementById('gameContainer').appendChild(bullet);
+                    
+                    soundEnabled.play(sounds.shoot); // 播放射击音效
+                    
+                    // 动画子弹
+                    let bulletLeft = shipRect.left + shipRect.width - 5;
+                    const bulletInterval = setInterval(() => {
+                        bulletLeft += 15;
+                        bullet.style.left = `${bulletLeft}px`;
+                        
+                        if (bulletLeft > window.innerWidth) {
+                            clearInterval(bulletInterval);
+                            bullet.remove();
+                        }
+                        
+                        // 检测碰撞
+                        const enemies = document.querySelectorAll('.spaceEnemy');
+                        enemies.forEach((enemy, index) => {
+                            const enemyRect = enemy.getBoundingClientRect();
+                            if (bulletLeft > enemyRect.left && 
+                                bulletLeft < enemyRect.right + 20 &&
+                                parseFloat(bullet.style.top) > enemyRect.top &&
+                                parseFloat(bullet.style.top) < enemyRect.bottom) {
+                                
+                                clearInterval(bulletInterval);
+                                bullet.remove();
+                                this.onEnemyHit(index);
+                            }
+                        });
+                    }, 16);
+                    
+                    this.bullets.push({element: bullet, interval: bulletInterval});
+                    return -1;
+                },
+                onEnemyHit: function(index) {
+                    soundEnabled.play(sounds.hit); // 播放命中音效
+                    const event = new CustomEvent('optionSelected', {detail: {index: index}});
+                    document.dispatchEvent(event);
+                },
+                getCurrentTargetIndex: function() {
+                    const ship = document.getElementById('ship');
+                    const shipRect = ship.getBoundingClientRect();
+                    const enemies = document.querySelectorAll('.spaceEnemy');
+                    
+                    let closestIndex = 0;
+                    let closestDistance = Infinity;
+                    
+                    enemies.forEach((enemy, index) => {
+                        const enemyRect = enemy.getBoundingClientRect();
+                        const distance = Math.abs(enemyRect.left - (shipRect.left + shipRect.width));
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            closestIndex = index;
+                        }
+                    });
+                    
+                    return closestIndex;
+                },
+                animateCorrect: function(index) {
+                    const enemies = document.querySelectorAll('.spaceEnemy');
+                    if (enemies[index]) {
+                        enemies[index].style.animation = "explode 0.6s ease-out forwards";
+                        enemies[index].style.transform = "scale(1.5) rotate(360deg)";
+                        enemies[index].style.boxShadow = "0 0 30px #00FF00";
+                        soundEnabled.play(sounds.correct); // 播放正确音效
+                    }
+                },
+                animateWrong: function(index) {
+                    const enemies = document.querySelectorAll('.spaceEnemy');
+                    if (enemies[index]) {
+                        enemies[index].style.animation = "explode 0.6s ease-out forwards";
+                        enemies[index].style.transform = "scale(0.5) rotate(180deg)";
+                        enemies[index].style.opacity = "0.3";
+                        enemies[index].style.boxShadow = "0 0 30px #FF0000";
+                        soundEnabled.play(sounds.wrong); // 播放错误音效
+                    }
+                },
+                spawnReward: function(x, y) {
+                    const reward = document.createElement('div');
+                    reward.className = 'reward';
+                    reward.style.cssText = `
+                        position: absolute;
+                        left: ${x}px;
+                        top: ${y}px;
+                        width: 25px;
+                        height: 25px;
+                        background: radial-gradient(circle, #00BFFF, #0000CD);
+                        border: 2px solid #00008B;
+                        border-radius: 50%;
+                        box-shadow: 0 0 20px #00BFFF;
+                        z-index: 50;
+                        animation: floatUp 1.5s ease-out forwards;
+                    `;
+                    document.getElementById('gameContainer').appendChild(reward);
+                    
+                    setTimeout(() => {
+                        reward.remove();
+                    }, 1500);
+                }
+            },
+
+            goldMiner: {
+                name: "黄金矿工",
+                background: "linear-gradient(to bottom, #8B4513 0%, #A0522D 30%, #654321 100%)",
+                hook: null,
+                hookChain: null,
+                hookActive: false,
+                grabbedOption: null,
+                grabbedOptionIndex: null,
+                init: function() {
+                    this.createScene();
+                },
+                createScene: function() {
+                    const gameObjects = document.getElementById('gameObjects');
+                    gameObjects.innerHTML = '';
+                    
+                    // 创建地面
+                    const ground = document.createElement('div');
+                    ground.style.cssText = "position:absolute;bottom:0;width:100%;height:100px;background:linear-gradient(to bottom, #5C4033 0%, #2F1C0F 100%);border-top:5px solid #000;";
+                    gameObjects.appendChild(ground);
+
+                    // 创建矿工（在左上角）
+                    const miner = document.createElement('div');
+                    miner.id = 'miner';
+                    miner.style.cssText = `
+                        position: absolute;
+                        top: 80px;
+                        left: 100px;
+                        width: 50px;
+                        height: 50px;
+                        z-index: 20;
+                    `;
+                    miner.innerHTML = `
+                        <svg viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="25" cy="15" r="12" fill="#8B4513"/>
+                            <rect x="15" y="20" width="20" height="18" fill="#A0522D" rx="2"/>
+                            <rect x="17" y="38" width="6" height="5" fill="#000"/>
+                            <rect x="27" y="38" width="6" height="5" fill="#000"/>
+                            <circle cx="20" cy="12" r="2" fill="#fff"/>
+                            <circle cx="30" cy="12" r="2" fill="#fff"/>
+                            <circle cx="21" cy="12" r="1" fill="#000"/>
+                            <circle cx="31" cy="12" r="1" fill="#000"/>
+                            <path d="M22 18 Q25 20 28 18" stroke="#000" stroke-width="1" fill="none"/>
+                            <rect x="23" y="8" width="4" height="3" fill="#FFD700"/>
+                        </svg>
+                    `;
+                    gameObjects.appendChild(miner);
+
+                    // 创建矿洞背景
+                    const caveWallLeft = document.createElement('div');
+                    caveWallLeft.style.cssText = "position:absolute;top:0;left:0;width:150px;bottom:0;background:linear-gradient(to right,#5C4033,#8B4513);";
+                    gameObjects.appendChild(caveWallLeft);
+
+                    const caveWallRight = document.createElement('div');
+                    caveWallRight.style.cssText = "position:absolute;top:0;right:0;width:150px;bottom:0;background:linear-gradient(to left,#5C4033,#8B4513);";
+                    gameObjects.appendChild(caveWallRight);
+
+                    // 创建岩石（使用不同形状和大小）
+                    const rock1 = document.createElement('div');
+                    rock1.style.cssText = "position:absolute;width:120px;height:80px;bottom:350px;left:200px;background:#696969;border-radius:20px 10px 30px 15px;transform:rotate(5deg);box-shadow:8px 8px 20px rgba(0,0,0,0.5);";
+                    gameObjects.appendChild(rock1);
+
+                    const rock2 = document.createElement('div');
+                    rock2.style.cssText = "position:absolute;width:90px;height:110px;bottom:280px;right:220px;background:#5D5D5D;border-radius:15px 25px 10px 30px;transform:rotate(-8deg);box-shadow:8px 8px 20px rgba(0,0,0,0.5);";
+                    gameObjects.appendChild(rock2);
+
+                    const rock3 = document.createElement('div');
+                    rock3.style.cssText = "position:absolute;width:70px;height:60px;bottom:420px;left:400px;background:#7A7A7A;border-radius:25px 15px 20px 10px;transform:rotate(12deg);box-shadow:8px 8px 20px rgba(0,0,0,0.5);";
+                    gameObjects.appendChild(rock3);
+
+                    // 创建矿车轨道
+                    const rail = document.createElement('div');
+                    rail.style.cssText = "position:absolute;bottom:120px;left:0;width:100%;height:15px;background:#3A2A1A;border-top:3px solid #000;border-bottom:3px solid #000;";
+                    gameObjects.appendChild(rail);
+
+                    // 创建矿车（在轨道上）
+                    const cart = document.createElement('div');
+                    cart.style.cssText = "position:absolute;width:100px;height:50px;bottom:135px;left:30%;background:#8B4513;border:3px solid #000;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.5);animation:moveCart 8s linear infinite;";
+                    cart.innerHTML = `
+                        <div style="position:absolute;bottom:-12px;left:25px;width:20px;height:12px;background:#000;border-radius:50%;"></div>
+                        <div style="position:absolute;bottom:-12px;right:25px;width:20px;height:12px;background:#000;border-radius:50%;"></div>
+                        <div style="position:absolute;top:5px;left:5px;right:5px;height:20px;background:#A0522D;border-radius:5px;"></div>
+                    `;
+                    gameObjects.appendChild(cart);
+
+                    // 创建金块（选项） - 分布在地底不同位置
+                    const goldContainer = document.createElement('div');
+                    goldContainer.className = 'goldContainer';
+                    goldContainer.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;";
+                    gameObjects.appendChild(goldContainer);
+
+                    // 不同位置的金块
+                    const positions = [
+                        {left: '25%', top: '65%', size: 70},
+                        {right: '30%', top: '75%', size: 80},
+                        {left: '55%', top: '85%', size: 75},
+                        {right: '35%', top: '60%', size: 85}
+                    ];
+
+                    for(let i = 0; i < 4; i++) {
+                        const gold = document.createElement('div');
+                        gold.className = 'minerGold';
+                        gold.dataset.index = i;
+                        gold.style.cssText = `
+                            position: absolute;
+                            width: ${positions[i].size}px;
+                            height: ${positions[i].size}px;
+                            background: radial-gradient(circle at 30% 30%, #FFD700, #DAA520);
+                            border: 4px solid #B8860B;
+                            border-radius: 50%;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            font-family: "Helvetica Neue", Arial, sans-serif;
+                            color: #5C4033;
+                            font-weight: bold;
+                            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+                            box-shadow: 5px 5px 20px rgba(218,165,32,0.5);
+                            ${positions[i].left ? `left: ${positions[i].left};` : `right: ${positions[i].right};`}
+                            top: ${positions[i].top};
+                        `;
+                        gold.innerHTML = `
+                            <div class="label" style="font-size:24px;">${String.fromCharCode(65 + i)}</div>
+                            <div class="text" style="font-size:12px;margin-top:5px;text-align:center;"></div>
+                        `;
+                        goldContainer.appendChild(gold);
+                    }
+                },
+                updateGolds: function(options) {
+                    const goldElements = document.querySelectorAll('.minerGold');
+                    goldElements.forEach((gold, i) => {
+                        gold.querySelector('.text').textContent = options[i];
+                    });
+                },
+                move: function(direction) {
+                    // 黄金矿工不需要移动，钩子从固定位置抛出
+                    return 0;
+                },
+                action: function() {
+                    if (this.hookActive) return -1;
+                    
+                    const miner = document.getElementById('miner');
+                    const minerRect = miner.getBoundingClientRect();
+                    
+                    // 创建钩子链条
+                    this.hookChain = document.createElement('div');
+                    this.hookChain.style.cssText = `
+                        position: absolute;
+                        left: ${minerRect.right - 5}px;
+                        top: ${minerRect.bottom - 10}px;
+                        width: 2px;
+                        height: 0;
+                        background: #696969;
+                        z-index: 15;
+                    `;
+                    document.getElementById('gameContainer').appendChild(this.hookChain);
+                    
+                    // 创建钩子
+                    this.hook = document.createElement('div');
+                    this.hook.className = 'hook';
+                    this.hook.style.cssText = `
+                        position: absolute;
+                        left: ${minerRect.right - 10}px;
+                        top: ${minerRect.bottom - 5}px;
+                        width: 12px;
+                        height: 12px;
+                        background: #696969;
+                        clip-path: path('M0,0 L12,0 L12,12 L6,6 L0,12 Z');
+                        z-index: 16;
+                        box-shadow: 0 0 5px rgba(0,0,0,0.5);
+                    `;
+                    document.getElementById('gameContainer').appendChild(this.hook);
+                    
+                    soundEnabled.play(sounds.throwHook); // 播放抛钩音效
+                    
+                    // 钩子物理参数
+                    let hookX = minerRect.right - 10;
+                    let hookY = minerRect.bottom - 5;
+                    let velocityX = 6; // 初始向右速度
+                    let velocityY = 8; // 初始向下速度
+                    let gravity = 0.4;
+                    let maxChainLength = 500;
+                    let currentChainLength = 0;
+                    let swinging = false;
+                    
+                    this.hookActive = true;
+                    
+                    const hookInterval = setInterval(() => {
+                        if (!swinging) {
+                            // 抛射阶段
+                            velocityY += gravity;
+                            hookX += velocityX;
+                            hookY += velocityY;
+                            currentChainLength = Math.sqrt((hookX - (minerRect.right - 10))**2 + (hookY - (minerRect.bottom - 5))**2);
+                            
+                            this.hookChain.style.height = `${currentChainLength}px`;
+                            this.hookChain.style.transform = `rotate(${Math.atan2(velocityY, velocityX)}rad)`;
+                            this.hookChain.style.transformOrigin = 'top center';
+                            this.hook.style.left = `${hookX}px`;
+                            this.hook.style.top = `${hookY}px`;
+                            
+                            if (currentChainLength >= maxChainLength || hookY > window.innerHeight - 150) {
+                                swinging = true;
+                                velocityX = 2; // 减速并开始摆动
+                            }
+                        } else {
+                            // 摆动阶段
+                            hookX += velocityX;
+                            hookY += 0.5; // 缓慢下降
+                            
+                            this.hook.style.left = `${hookX}px`;
+                            this.hook.style.top = `${hookY}px`;
+                            this.hookChain.style.height = `${Math.sqrt((hookX - (minerRect.right - 10))**2 + (hookY - (minerRect.bottom - 5))**2)}px`;
+                            this.hookChain.style.transform = `rotate(${Math.atan2(hookY - (minerRect.bottom - 5), hookX - (minerRect.right - 10))}rad)`;
+                            
+                            // 检测碰撞
+                            const golds = document.querySelectorAll('.minerGold');
+                            golds.forEach((gold, index) => {
+                                const goldRect = gold.getBoundingClientRect();
+                                const hookRect = this.hook.getBoundingClientRect();
+                                
+                                if (!this.grabbedOption && 
+                                    hookRect.right > goldRect.left + 20 &&
+                                    hookRect.left < goldRect.right - 20 &&
+                                    hookRect.bottom > goldRect.top + 20 &&
+                                    hookRect.top < goldRect.bottom - 20) {
+                                    
+                                    // 抓取金块
+                                    this.grabbedOption = gold;
+                                    this.grabbedOptionIndex = index;
+                                    this.grabbedOption.style.transition = "none";
+                                    this.grabbedOption.style.zIndex = "25";
+                                    soundEnabled.play(sounds.grab); // 播放抓取音效
+                                }
+                            });
+                            
+                            // 如果抓取了金块，开始回收
+                            if (this.grabbedOption) {
+                                clearInterval(hookInterval);
+                                this.retractHook();
+                                return;
+                            }
+                        }
+                        
+                        // 边界检测
+                        if (hookX < 50) velocityX = Math.abs(velocityX);
+                        if (hookX > window.innerWidth - 50) velocityX = -Math.abs(velocityX);
+                        if (hookY > window.innerHeight - 100) velocityY = -Math.abs(velocityY) * 0.8;
+                        
+                    }, 30);
+                    
+                    return -1;
+                },
+                retractHook: function() {
+                    soundEnabled.play(sounds.retract); // 播放回收音效
+                    
+                    const miner = document.getElementById('miner');
+                    const minerRect = miner.getBoundingClientRect();
+                    const targetX = minerRect.right - 10;
+                    const targetY = minerRect.bottom - 5;
+                    
+                    let currentX = parseFloat(this.hook.style.left);
+                    let currentY = parseFloat(this.hook.style.top);
+                    let currentChainLength = Math.sqrt((currentX - targetX)**2 + (currentY - targetY)**2);
+                    
+                    const retractInterval = setInterval(() => {
+                        // 计算方向
+                        const dx = targetX - currentX;
+                        const dy = targetY - currentY;
+                        const distance = Math.sqrt(dx*dx + dy*dy);
+                        
+                        if (distance < 5) {
+                            // 到达顶部
+                            clearInterval(retractInterval);
+                            this.hook.remove();
+                            this.hookChain.remove();
+                            this.hook = null;
+                            this.hookChain = null;
+                            this.hookActive = false;
+                            
+                            // 触发选项选择
+                            const event = new CustomEvent('optionSelected', {detail: {index: this.grabbedOptionIndex}});
+                            document.dispatchEvent(event);
+                            
+                            this.grabbedOption = null;
+                            this.grabbedOptionIndex = null;
+                        } else {
+                            // 移动钩子和抓取的金块
+                            currentX += dx * 0.08;
+                            currentY += dy * 0.08;
+                            
+                            this.hook.style.left = `${currentX}px`;
+                            this.hook.style.top = `${currentY}px`;
+                            this.hookChain.style.height = `${Math.sqrt((currentX - targetX)**2 + (currentY - targetY)**2)}px`;
+                            this.hookChain.style.transform = `rotate(${Math.atan2(currentY - targetY, currentX - targetX)}rad)`;
+                            
+                            // 移动抓取的金块
+                            if (this.grabbedOption) {
+                                this.grabbedOption.style.left = `${currentX - this.grabbedOption.offsetWidth/2 + 6}px`;
+                                this.grabbedOption.style.top = `${currentY - this.grabbedOption.offsetHeight/2 + 6}px`;
+                            }
+                        }
+                    }, 30);
+                },
+                getCurrentTargetIndex: function() {
+                    return 0;
+                },
+                animateCorrect: function(index) {
+                    const golds = document.querySelectorAll('.minerGold');
+                    if (golds[index]) {
+                        golds[index].style.animation = "bounce 0.6s ease-out";
+                        golds[index].style.boxShadow = "0 0 30px #00FF00";
+                        soundEnabled.play(sounds.correct); // 播放正确音效
+                    }
+                },
+                animateWrong: function(index) {
+                    const golds = document.querySelectorAll('.minerGold');
+                    if (golds[index]) {
+                        golds[index].style.animation = "shake 0.6s ease-out";
+                        golds[index].style.opacity = "0.5";
+                        golds[index].style.boxShadow = "0 0 30px #FF0000";
+                        soundEnabled.play(sounds.wrong); // 播放错误音效
+                    }
+                },
+                spawnReward: function(x, y) {
+                    const reward = document.createElement('div');
+                    reward.className = 'reward';
+                    reward.style.cssText = `
+                        position: absolute;
+                        left: ${x}px;
+                        top: ${y}px;
+                        width: 40px;
+                        height: 40px;
+                        background: radial-gradient(circle, #FFD700, #B8860B);
+                        border: 4px solid #DAA520;
+                        border-radius: 50%;
+                        box-shadow: 0 0 30px rgba(255,215,0,0.8);
+                        z-index: 50;
+                        animation: floatUp 1.5s ease-out forwards;
+                    `;
+                    document.getElementById('gameContainer').appendChild(reward);
+                    
+                    setTimeout(() => {
+                        reward.remove();
+                    }, 1500);
+                }
+            }
+        };
+
+        // =====================
+        // 📚 题目数据
+        // =====================
+        const questions = [
+            {
+                question: "JavaScript中，以下哪个不是原始数据类型？",
+                options: ["Number", "Array", "String", "Boolean"],
+                correct: "B",
+                theme: "mario"
+            },
+            {
+                question: "HTML5中，哪个标签用于定义导航链接？",
+                options: ["nav", "navigation", "navigate", "menu"],
+                correct: "A",
+                theme: "space"
+            },
+            {
+                question: "CSS中，哪个属性用于设置元素的透明度？",
+                options: ["transparency", "opacity", "visible", "alpha"],
+                correct: "B",
+                theme: "goldMiner"
+            },
+            {
+                question: "在Git中，哪个命令用于查看提交历史？",
+                options: ["git status", "git log", "git history", "git show"],
+                correct: "B",
+                theme: "space"
+            },
+            {
+                question: "React中，哪个Hook用于处理副作用？",
+                options: ["useState", "useReducer", "useEffect", "useContext"],
+                correct: "C",
+                theme: "goldMiner"
+            },
+            {
+                question: "HTTP状态码404表示什么？",
+                options: ["服务器错误", "未找到", "禁止访问", "请求超时"],
+                correct: "B",
+                theme: "mario"
+            },
+            {
+                question: "Python中，哪个关键字用于定义函数？",
+                options: ["function", "def", "func", "define"],
+                correct: "B",
+                theme: "goldMiner"
+            },
+            {
+                question: "数据库中，SQL的全称是什么？",
+                options: ["Structured Query Language", "Simple Query Language", "Standard Query Language", "System Query Language"],
+                correct: "A",
+                theme: "space"
+            }
+        ];
+
+        // =====================
+        // 🎮 游戏状态
+        // =====================
+        let gameState = {
+            score: 0,
+            rewards: 0,
+            lives: 3,
+            currentQuestion: 0,
+            gameStarted: false,
+            currentTheme: null,
+            currentThemeObj: null,
+            awaitingNext: false,
+            currentAnswer: null
+        };
+
+        // DOM 元素
+        const questionArea = document.getElementById('questionArea');
+        const questionText = document.getElementById('questionText');
+        const scoreElement = document.getElementById('score');
+        const rewardsElement = document.getElementById('rewards');
+        const livesElement = document.getElementById('lives');
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        const actionBtn = document.getElementById('actionBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const answerFeedback = document.getElementById('answerFeedback');
+        const feedbackTitle = document.getElementById('feedbackTitle');
+        const feedbackMessage = document.getElementById('feedbackMessage');
+        const continueBtn = document.getElementById('continueBtn');
+        const retryBtn = document.getElementById('retryBtn');
+        const soundToggle = document.getElementById('soundToggle');
+
+        // =====================
+        // 🎨 主题应用函数
+        // =====================
+        function applyTheme(themeKey) {
+            const theme = themes[themeKey];
+            if (!theme) return;
+
+            // 应用背景
+            document.body.style.background = theme.background;
+            
+            // 初始化主题场景
+            theme.init();
+            
+            gameState.currentTheme = themeKey;
+            gameState.currentThemeObj = theme;
+        }
+
+        // =====================
+        // 🎮 游戏逻辑
+        // =====================
+        function initGame() {
+            startScreen.style.display = 'none';
+            gameState = {
+                score: 0,
+                rewards: 0,
+                lives: 3,
+                currentQuestion: 0,
+                gameStarted: true,
+                currentTheme: null,
+                currentThemeObj: null,
+                awaitingNext: false,
+                currentAnswer: null
+            };
+            updateHUD();
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (gameState.currentQuestion >= questions.length) {
+                endGame(true);
+                return;
+            }
+
+            const q = questions[gameState.currentQuestion];
+            
+            // 应用主题
+            if (q.theme) {
+                applyTheme(q.theme);
+            }
+
+            // 显示题目
+            questionText.textContent = q.question;
+
+            // 更新选项内容
+            if (gameState.currentThemeObj) {
+                if (gameState.currentTheme === 'mario') {
+                    gameState.currentThemeObj.updateBlocks(q.options);
+                } else if (gameState.currentTheme === 'space') {
+                    gameState.currentThemeObj.updateEnemies(q.options);
+                } else if (gameState.currentTheme === 'goldMiner') {
+                    gameState.currentThemeObj.updateGolds(q.options);
+                }
+            }
+            
+            // 重置状态
+            gameState.awaitingNext = false;
+            nextBtn.style.display = 'none';
+            answerFeedback.style.display = 'none';
+        }
+
+        function move(direction) {
+            if (!gameState.gameStarted || !gameState.currentThemeObj || gameState.awaitingNext) return -1;
+            
+            return gameState.currentThemeObj.move(direction);
+        }
+
+        function action() {
+            if (!gameState.gameStarted || !gameState.currentThemeObj || gameState.awaitingNext) return -1;
+            
+            return gameState.currentThemeObj.action();
+        }
+
+        function checkAnswer(selectedIndex) {
+            if (gameState.awaitingNext) return;
+            
+            const currentQ = questions[gameState.currentQuestion];
+            const selectedOption = String.fromCharCode(65 + selectedIndex);
+            gameState.currentAnswer = {index: selectedIndex, option: selectedOption};
+
+            if (selectedOption === currentQ.correct) {
+                // 正确
+                gameState.currentThemeObj.animateCorrect(selectedIndex);
+                gameState.score += 100;
+                gameState.rewards += 1;
+                updateHUD();
+
+                // 生成奖励
+                setTimeout(() => {
+                    const elements = document.querySelectorAll(
+                        gameState.currentTheme === 'mario' ? '.optionBlock' : 
+                        gameState.currentTheme === 'space' ? '.spaceEnemy' : '.minerGold'
+                    );
+                    if (elements[selectedIndex]) {
+                        const rect = elements[selectedIndex].getBoundingClientRect();
+                        gameState.currentThemeObj.spawnReward(rect.left + rect.width/2, rect.top);
+                    }
+                }, 100);
+
+                // 显示反馈
+                showAnswerFeedback(true, `✓ 回答正确！`, `正确答案是 ${selectedOption}: ${currentQ.options[selectedIndex]}`);
+                soundEnabled.play(sounds.correct); // 播放正确音效
+            } else {
+                // 错误
+                gameState.currentThemeObj.animateWrong(selectedIndex);
+                gameState.lives -= 1;
+                updateHUD();
+
+                // 显示反馈
+                showAnswerFeedback(false, `✗ 回答错误！`, `正确答案是 ${currentQ.correct}: ${currentQ.options[getCorrectIndex(currentQ)]}\n你选择了 ${selectedOption}: ${currentQ.options[selectedIndex]}`);
+                soundEnabled.play(sounds.wrong); // 播放错误音效
+                
+                if (gameState.lives <= 0) {
+                    setTimeout(() => {
+                        endGame(false);
+                    }, 2000);
+                    return;
+                }
+            }
+            
+            gameState.awaitingNext = true;
+            nextBtn.style.display = 'block';
+        }
+
+        function showAnswerFeedback(isCorrect, title, message) {
+            feedbackTitle.textContent = title;
+            feedbackTitle.style.color = isCorrect ? '#00FF00' : '#FF0000';
+            feedbackMessage.innerHTML = message.replace(/\n/g, '<br>');
+            answerFeedback.style.display = 'block';
+        }
+
+        function getCorrectIndex(q) {
+            return q.correct.charCodeAt(0) - 65;
+        }
+
+        function nextQuestion() {
+            soundEnabled.play(sounds.next); // 播放下一题音效
+            answerFeedback.style.display = 'none';
+            nextBtn.style.display = 'none';
+            gameState.currentQuestion++;
+            loadQuestion();
+        }
+
+        function retryQuestion() {
+            soundEnabled.play(sounds.next); // 播放重试音效
+            answerFeedback.style.display = 'none';
+            nextBtn.style.display = 'none';
+            gameState.awaitingNext = false;
+            loadQuestion(); // 重新加载当前题目
+        }
+
+        function updateHUD() {
+            scoreElement.textContent = gameState.score;
+            rewardsElement.textContent = gameState.rewards;
+            livesElement.textContent = '❤️'.repeat(gameState.lives);
+        }
+
+        function endGame(isWin) {
+            gameState.gameStarted = false;
+
+            const endScreen = document.createElement('div');
+            endScreen.className = 'endScreen';
+            endScreen.innerHTML = `
+                <h1>${isWin ? '🎉 通关成功！' : '💀 游戏结束'}</h1>
+                <div class="stats">
+                    最终得分: ${gameState.score}<br>
+                    收集物品: ${gameState.rewards}<br>
+                    ${isWin ? '你是真正的游戏大师！' : '再接再厉！'}
+                </div>
+                <button class="startBtn" onclick="location.reload()">重新开始</button>
+            `;
+            document.body.appendChild(endScreen);
+        }
+
+        // =====================
+        // 🖱️ 事件绑定
+        // =====================
+        startBtn.addEventListener('click', initGame);
+
+        leftBtn.addEventListener('click', () => {
+            move('left');
+        });
+
+        rightBtn.addEventListener('click', () => {
+            move('right');
+        });
+
+        actionBtn.addEventListener('click', () => {
+            const selectedIndex = action();
+            if (selectedIndex !== -1) {
+                checkAnswer(selectedIndex);
+            }
+        });
+
+        nextBtn.addEventListener('click', nextQuestion);
+
+        continueBtn.addEventListener('click', nextQuestion);
+
+        retryBtn.addEventListener('click', retryQuestion);
+
+        // 音效开关
+        soundToggle.addEventListener('click', () => {
+            soundEnabled.toggle();
+        });
+
+        // 监听异步选择事件
+        document.addEventListener('optionSelected', (e) => {
+            checkAnswer(e.detail.index);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.gameStarted) return;
+
+            // 音效开关
+            if (e.key === 'm' || e.key === 'M') {
+                soundEnabled.toggle();
+                return;
+            }
+
+            if (gameState.awaitingNext) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    nextQuestion();
+                }
+                return;
+            }
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    move('left');
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    move('right');
+                    break;
+                case 'ArrowUp':
+                case ' ':
+                case 'w':
+                case 'W':
+                    const selectedIndex = action();
+                    if (selectedIndex !== -1) {
+                        checkAnswer(selectedIndex);
+                    }
+                    break;
+            }
+        });
+
+        // 添加主题特定动画
+        const animations = document.createElement('style');
+        animations.textContent = `
+            @keyframes twinkle {
+                0%, 100% { opacity: 0.3; }
+                50% { opacity: 1; }
+            }
+            
+            @keyframes rotate {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            
+            @keyframes flyLeft {
+                0% { transform: translateX(100vw); }
+                100% { transform: translateX(-100px); }
+            }
+            
+            @keyframes bump {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-20px); }
+            }
+            
+            @keyframes explode {
+                0% { transform: scale(1) rotate(0deg); }
+                100% { transform: scale(1.5) rotate(360deg); }
+            }
+            
+            @keyframes moveCart {
+                0% { left: -150px; }
+                100% { left: 110%; }
+            }
+            
+            @keyframes bounce {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.2); }
+            }
+            
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+            
+            @keyframes floatUp {
+                0% { transform: translateY(0) scale(1); opacity: 1; }
+                100% { transform: translateY(-150px) scale(0.3); opacity: 0; }
+            }
+            
+            #mario.jump {
+                animation: jump 0.8s ease-out;
+            }
+            
+            @keyframes jump {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-120px); }
+            }
+        `;
+        document.head.appendChild(animations);
+
+        // 初始化 HUD
+        updateHUD();
+    </script>
+</body>
+</html>

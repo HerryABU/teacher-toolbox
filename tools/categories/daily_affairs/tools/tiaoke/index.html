@@ -1,0 +1,2624 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教师代课统计系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- 登录界面 -->
+    <div id="loginPage" class="flex-1 flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white rounded-lg shadow-xl overflow-hidden transform transition-all duration-300">
+            <div class="bg-blue-600 p-6">
+                <h2 class="text-center text-white text-2xl font-bold">
+                    <i class="fa fa-graduation-cap mr-2"></i>教师代课统计系统
+                </h2>
+                <p class="text-center text-blue-100 mt-2">请登录您的账号</p>
+            </div>
+            <div class="p-6">
+                <form id="loginForm">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="loginUsername">
+                            用户名
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fa fa-user text-gray-400"></i>
+                            </span>
+                            <input class="shadow appearance-none border rounded w-full py-2 pl-10 pr-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                   id="loginUsername" type="text" required>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="loginPassword">
+                            密码
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fa fa-lock text-gray-400"></i>
+                            </span>
+                            <input class="shadow appearance-none border rounded w-full py-2 pl-10 pr-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                   id="loginPassword" type="password" required>
+                        </div>
+                    </div>
+                    <div class="mb-4 hidden" id="loginError">
+                        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+                            <i class="fa fa-exclamation-circle mr-2"></i>
+                            <span class="block sm:inline" id="loginErrorMessage">用户名或密码错误</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded focus:outline-none focus:shadow-outline transition duration-200 w-full flex items-center justify-center">
+                            <i class="fa fa-sign-in mr-2"></i>登录
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主系统界面 (初始隐藏) -->
+    <div id="systemPage" class="hidden flex flex-col min-h-screen">
+        <!-- 顶部导航 -->
+        <nav class="bg-blue-600 text-white shadow-md">
+            <div class="container mx-auto">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <h1 class="text-xl font-bold p-4">
+                            <i class="fa fa-graduation-cap mr-2"></i>教师代课统计系统
+                        </h1>
+                    </div>
+                    <div class="hidden md:flex items-center space-x-1">
+                        <a href="#dashboard" class="nav-link px-4 py-4 hover:bg-blue-700 transition-colors duration-200">
+                            <i class="fa fa-dashboard mr-1"></i>仪表盘
+                        </a>
+                        <a href="#substitute" class="nav-link px-4 py-4 hover:bg-blue-700 transition-colors duration-200">
+                            <i class="fa fa-exchange mr-1"></i>代课申请
+                        </a>
+                        <a href="#approval" class="nav-link px-4 py-4 hover:bg-blue-700 transition-colors duration-200 admin-only approval-admin-only">
+                            <i class="fa fa-check-square-o mr-1"></i>审批管理
+                        </a>
+                        <a href="#teachers" class="nav-link px-4 py-4 hover:bg-blue-700 transition-colors duration-200 admin-only">
+                            <i class="fa fa-users mr-1"></i>教师管理
+                        </a>
+                        <a href="#reports" class="nav-link px-4 py-4 hover:bg-blue-700 transition-colors duration-200 admin-only">
+                            <i class="fa fa-bar-chart mr-1"></i>统计报表
+                        </a>
+                        <a href="#profile" class="nav-link px-4 py-4 hover:bg-blue-700 transition-colors duration-200">
+                            <i class="fa fa-user-circle mr-1"></i>个人设置
+                        </a>
+                    </div>
+                    <div class="flex items-center p-3">
+                        <span class="hidden md:inline-block mr-3" id="currentUser">教师</span>
+                        <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded transition-colors duration-200">
+                            <i class="fa fa-sign-out mr-1"></i>退出
+                        </button>
+                        <button id="mobileMenuBtn" class="md:hidden ml-3 text-xl">
+                            <i class="fa fa-bars"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="mobileMenu" class="md:hidden hidden bg-blue-700">
+                    <a href="#dashboard" class="block px-4 py-3 hover:bg-blue-600 transition-colors duration-200">
+                        <i class="fa fa-dashboard mr-1"></i>仪表盘
+                    </a>
+                    <a href="#substitute" class="block px-4 py-3 hover:bg-blue-600 transition-colors duration-200">
+                        <i class="fa fa-exchange mr-1"></i>代课申请
+                    </a>
+                    <a href="#approval" class="block px-4 py-3 hover:bg-blue-600 transition-colors duration-200 admin-only approval-admin-only">
+                        <i class="fa fa-check-square-o mr-1"></i>审批管理
+                    </a>
+                    <a href="#teachers" class="block px-4 py-3 hover:bg-blue-600 transition-colors duration-200 admin-only">
+                        <i class="fa fa-users mr-1"></i>教师管理
+                    </a>
+                    <a href="#reports" class="block px-4 py-3 hover:bg-blue-600 transition-colors duration-200 admin-only">
+                        <i class="fa fa-bar-chart mr-1"></i>统计报表
+                    </a>
+                    <a href="#profile" class="block px-4 py-3 hover:bg-blue-600 transition-colors duration-200">
+                        <i class="fa fa-user-circle mr-1"></i>个人设置
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 container mx-auto p-4 md:p-6">
+            <!-- 仪表盘界面 -->
+            <div id="dashboardSection">
+                <div class="mb-6">
+                    <div class="flex flex-wrap items-center text-sm text-gray-500 mb-2">
+                        <span>首页</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">系统仪表盘</h2>
+                    <p class="text-gray-600 mt-1">查看系统概览和最新动态</p>
+                </div>
+
+                <!-- 仪表盘内容 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">个人代课统计</h3>
+                        <div class="h-64">
+                            <canvas id="personalStatsChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">最近申请记录</h3>
+                        <div class="space-y-4" id="recentApplications">
+                            <!-- 最近申请记录将通过JavaScript动态添加 -->
+                        </div>
+                        <div id="noRecentApplications" class="text-center py-8 text-gray-500 hidden">
+                            <p>暂无申请记录</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 代课申请界面（所有用户可见） -->
+            <div id="substituteSection" class="hidden">
+                <div class="mb-6">
+                    <div class="flex flex-wrap items-center text-sm text-gray-500 mb-2">
+                        <a href="#dashboard" class="hover:text-blue-600">首页</a>
+                        <i class="fa fa-angle-right mx-2 text-gray-400 text-xs"></i>
+                        <span>代课申请</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">提交代课申请</h2>
+                    <p class="text-gray-600 mt-1">请填写以下信息提交代课申请，等待审批</p>
+                </div>
+
+                <!-- 代课申请表单卡片 -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6 transform transition-all duration-300 hover:shadow-xl">
+                    <div class="p-4 md:p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-700">代课申请信息</h3>
+                    </div>
+                    <div class="p-4 md:p-6">
+                        <form id="substituteForm">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="applicantName">
+                                        申请人 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                           id="applicantName" type="text" readonly>
+                                    <input type="hidden" id="applicantId">
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="applyDate">
+                                        申请日期 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                           id="applyDate" type="date" required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="courseDate">
+                                        课程日期 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                           id="courseDate" type="date" required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="courseTime">
+                                        课程时间 <span class="text-red-500">*</span>
+                                    </label>
+                                    <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                            id="courseTime" required>
+                                        <option value="">请选择课程时间</option>
+                                        <option value="morning">上午 (8:00-12:00)</option>
+                                        <option value="afternoon">下午 (14:00-18:00)</option>
+                                        <option value="evening">晚上 (19:00-21:00)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="courseName">
+                                        课程名称 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                           id="courseName" type="text" required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="courseLocation">
+                                        上课地点 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                           id="courseLocation" type="text" required>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="substituteTeacher">
+                                        代课教师 <span class="text-red-500">*</span>
+                                    </label>
+                                    <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                            id="substituteTeacher" required>
+                                        <option value="">请选择代课教师</option>
+                                        <!-- 代课教师选项将通过JavaScript动态添加 -->
+                                    </select>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="reason">
+                                        申请原因 <span class="text-red-500">*</span>
+                                    </label>
+                                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                              id="reason" rows="4" required></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex justify-end">
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded transition-colors duration-200 flex items-center">
+                                    <i class="fa fa-paper-plane mr-2"></i>提交申请
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- 我的申请记录 -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl">
+                    <div class="p-4 md:p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-700">我的申请记录</h3>
+                    </div>
+                    <div class="p-4 md:p-6">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">申请ID</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">课程信息</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">代课教师</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">申请日期</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">状态</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="myApplicationsTable" class="bg-white divide-y divide-gray-200">
+                                    <!-- 申请记录将通过JavaScript动态添加 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 空状态显示 -->
+                        <div id="noApplications" class="text-center py-12 text-gray-500 hidden">
+                            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                                <i class="fa fa-file-text-o text-2xl text-gray-400"></i>
+                            </div>
+                            <p class="text-lg">暂无申请记录</p>
+                            <p class="text-gray-400 mt-2">您尚未提交任何代课申请</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 审批管理界面（仅审批管理员可见） -->
+            <div id="approvalSection" class="hidden admin-only approval-admin-only">
+                <div class="mb-6">
+                    <div class="flex flex-wrap items-center text-sm text-gray-500 mb-2">
+                        <a href="#dashboard" class="hover:text-blue-600">首页</a>
+                        <i class="fa fa-angle-right mx-2 text-gray-400 text-xs"></i>
+                        <span>审批管理</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">代课申请审批</h2>
+                    <p class="text-gray-600 mt-1">查看和处理所有教师提交的代课申请</p>
+                </div>
+
+                <!-- 审批管理筛选区 -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+                    <div class="p-4 md:p-6 border-b bg-gray-50">
+                        <div class="flex flex-wrap gap-4">
+                            <div class="flex-1 min-w-[200px]">
+                                <div class="relative">
+                                    <input type="text" id="approvalSearchInput" placeholder="搜索申请人、代课教师或课程名称..." 
+                                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <select id="approvalStatusFilter" class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="all">所有状态</option>
+                                    <option value="pending">待审批</option>
+                                    <option value="approved">已批准</option>
+                                    <option value="rejected">已拒绝</option>
+                                </select>
+                                <button id="refreshApprovalBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center">
+                                    <i class="fa fa-refresh mr-2"></i>刷新
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 审批列表 -->
+                    <div class="p-4 md:p-6">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">申请ID</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">申请人</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">课程信息</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">代课教师</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">申请日期</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">状态</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="approvalTable" class="bg-white divide-y divide-gray-200">
+                                    <!-- 审批记录将通过JavaScript动态添加 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 空状态显示 -->
+                        <div id="noApprovals" class="text-center py-12 text-gray-500 hidden">
+                            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                                <i class="fa fa-file-text-o text-2xl text-gray-400"></i>
+                            </div>
+                            <p class="text-lg">暂无申请记录</p>
+                            <p class="text-gray-400 mt-2">当前没有需要处理的代课申请</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 教师管理界面（仅管理员可见） -->
+            <div id="teachersSection" class="hidden admin-only">
+                <div class="mb-6">
+                    <div class="flex flex-wrap items-center text-sm text-gray-500 mb-2">
+                        <a href="#dashboard" class="hover:text-blue-600">首页</a>
+                        <i class="fa fa-angle-right mx-2 text-gray-400 text-xs"></i>
+                        <span>教师管理</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">教师信息管理</h2>
+                    <p class="text-gray-600 mt-1">管理教师基本信息，支持批量导入和离职教师删除</p>
+                </div>
+
+                <!-- 教师管理卡片 -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-6 transform transition-all duration-300 hover:shadow-xl">
+                    <div class="p-4 md:p-6 border-b flex flex-wrap justify-between items-center gap-4">
+                        <h3 class="text-lg font-semibold text-gray-700">教师列表</h3>
+                        <div class="flex gap-3">
+                            <button id="addTeacherBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center">
+                                <i class="fa fa-plus mr-2"></i>添加教师
+                            </button>
+                            <button id="batchImportBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center">
+                                <i class="fa fa-upload mr-2"></i>批量导入
+                            </button>
+                            <button id="downloadTemplateBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center">
+                                <i class="fa fa-file-excel-o mr-2"></i>下载模板
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 搜索和筛选区 -->
+                    <div class="p-4 md:p-6 border-b bg-gray-50">
+                        <div class="flex flex-wrap gap-4">
+                            <div class="flex-1 min-w-[200px]">
+                                <div class="relative">
+                                    <input type="text" id="searchInput" placeholder="搜索教师姓名、工号或用户名..." 
+                                        class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <select id="statusFilter" class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="all">所有状态</option>
+                                    <option value="active">在职</option>
+                                    <option value="leave">离职</option>
+                                </select>
+                                <select id="roleFilter" class="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="all">所有角色</option>
+                                    <option value="teacher">教师</option>
+                                    <option value="admin">管理员</option>
+                                    <option value="approval_admin">审批管理员</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 教师列表 -->
+                    <div class="p-4 md:p-6">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ID</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">姓名</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">工号</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">用户名</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">角色</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">入职日期</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">状态</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">代课次数</th>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teachersTable" class="bg-white divide-y divide-gray-200">
+                                    <!-- 教师信息将通过JavaScript动态添加 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 空状态显示 -->
+                        <div id="noTeachers" class="text-center py-12 text-gray-500 hidden">
+                            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                                <i class="fa fa-user-o text-2xl text-gray-400"></i>
+                            </div>
+                            <p class="text-lg">暂无教师信息</p>
+                            <p class="text-gray-400 mt-2">点击"添加教师"或"批量导入"按钮添加教师信息</p>
+                        </div>
+                        
+                        <!-- 分页控件 -->
+                        <div class="mt-6 flex justify-between items-center">
+                            <div class="text-sm text-gray-600">
+                                显示 <span id="showingRange">0-0</span> 条，共 <span id="totalCount">0</span> 条
+                            </div>
+                            <div class="flex space-x-2">
+                                <button id="prevPage" class="px-3 py-1 border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    <i class="fa fa-chevron-left"></i>
+                                </button>
+                                <button id="nextPage" class="px-3 py-1 border border-gray-300 rounded bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    <i class="fa fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计报表界面（仅管理员可见） -->
+            <div id="reportsSection" class="hidden admin-only">
+                <div class="mb-6">
+                    <div class="flex flex-wrap items-center text-sm text-gray-500 mb-2">
+                        <a href="#dashboard" class="hover:text-blue-600">首页</a>
+                        <i class="fa fa-angle-right mx-2 text-gray-400 text-xs"></i>
+                        <span>统计报表</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">代课统计报表</h2>
+                    <p class="text-gray-600 mt-1">查看和分析系统中的代课数据统计信息</p>
+                </div>
+
+                <!-- 导出按钮 -->
+                <div class="mb-6 flex justify-end">
+                    <button id="exportSubstituteBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center mr-3">
+                        <i class="fa fa-download mr-2"></i>导出代课节数统计
+                    </button>
+                    <button id="exportLeaveBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200 flex items-center">
+                        <i class="fa fa-download mr-2"></i>导出请假天数统计
+                    </button>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow p-6 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                                <i class="fa fa-file-text-o text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">总申请数</p>
+                                <p class="text-2xl font-bold text-gray-800" id="totalApplications">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                                <i class="fa fa-check-circle text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">已批准</p>
+                                <p class="text-2xl font-bold text-gray-800" id="approvedApplications">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+                                <i class="fa fa-clock-o text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">待审批</p>
+                                <p class="text-2xl font-bold text-gray-800" id="pendingApplications">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">代课申请状态分布</h3>
+                        <div class="h-64">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">教师代课次数排名</h3>
+                        <div class="h-64">
+                            <canvas id="teacherRankingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 个人设置界面 -->
+            <div id="profileSection" class="hidden">
+                <div class="mb-6">
+                    <div class="flex flex-wrap items-center text-sm text-gray-500 mb-2">
+                        <a href="#dashboard" class="hover:text-blue-600">首页</a>
+                        <i class="fa fa-angle-right mx-2 text-gray-400 text-xs"></i>
+                        <span>个人设置</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">个人信息设置</h2>
+                    <p class="text-gray-600 mt-1">管理您的个人信息和账户安全</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- 个人信息 -->
+                    <div class="lg:col-span-2 bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl">
+                        <div class="p-4 md:p-6 border-b">
+                            <h3 class="text-lg font-semibold text-gray-700">个人信息</h3>
+                        </div>
+                        <div class="p-4 md:p-6">
+                            <form id="profileForm">
+                                <input type="hidden" id="profileUserId">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-2" for="profileName">
+                                            姓名 <span class="text-red-500">*</span>
+                                        </label>
+                                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                               id="profileName" type="text" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-2" for="profileEmployeeId">
+                                            工号
+                                        </label>
+                                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight bg-gray-100" 
+                                               id="profileEmployeeId" type="text" readonly>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-2" for="profileUsername">
+                                            用户名 <span class="text-red-500">*</span>
+                                        </label>
+                                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                               id="profileUsername" type="text" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 text-sm font-bold mb-2" for="profileRole">
+                                            角色
+                                        </label>
+                                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight bg-gray-100" 
+                                               id="profileRole" type="text" readonly>
+                                    </div>
+                                    <div class="md:col-span-2">
+                                        <label class="block text-gray-700 text-sm font-bold mb-2" for="profileHireDate">
+                                            入职日期
+                                        </label>
+                                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight bg-gray-100" 
+                                               id="profileHireDate" type="text" readonly>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-6 flex justify-end">
+                                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded transition-colors duration-200 flex items-center">
+                                        <i class="fa fa-save mr-2"></i>保存修改
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 修改密码 -->
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl">
+                        <div class="p-4 md:p-6 border-b">
+                            <h3 class="text-lg font-semibold text-gray-700">修改密码</h3>
+                        </div>
+                        <div class="p-4 md:p-6">
+                            <form id="changePasswordForm">
+                                <input type="hidden" id="passwordUserId">
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="currentPassword">
+                                        当前密码 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                           id="currentPassword" type="password" required>
+                                    <p id="currentPasswordError" class="text-xs text-red-500 mt-1 hidden">当前密码不正确</p>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="newPassword">
+                                        新密码 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                           id="newPassword" type="password" required>
+                                    <p class="text-xs text-gray-500 mt-1">密码长度至少6位</p>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-gray-700 text-sm font-bold mb-2" for="confirmPassword">
+                                        确认新密码 <span class="text-red-500">*</span>
+                                    </label>
+                                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                           id="confirmPassword" type="password" required>
+                                    <p id="passwordMismatchError" class="text-xs text-red-500 mt-1 hidden">两次输入的密码不一致</p>
+                                </div>
+                                
+                                <div class="mt-6 flex justify-end">
+                                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded transition-colors duration-200 flex items-center">
+                                        <i class="fa fa-key mr-2"></i>更新密码
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer class="bg-gray-800 text-white py-6">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm">&copy; 2023 教师代课统计系统 - 版权所有</p>
+                    </div>
+                    <div class="flex space-x-6">
+                        <a href="#" class="text-gray-300 hover:text-white transition-colors duration-200">
+                            <i class="fa fa-question-circle mr-1"></i>帮助中心
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white transition-colors duration-200">
+                            <i class="fa fa-file-text-o mr-1"></i>使用手册
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-white transition-colors duration-200">
+                            <i class="fa fa-envelope-o mr-1"></i>联系我们
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 添加/编辑教师弹窗 -->
+    <div id="teacherModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-transform duration-300 scale-95">
+            <div class="px-6 py-4 border-b">
+                <h3 id="teacherModalTitle" class="text-lg font-bold text-gray-700">添加教师</h3>
+            </div>
+            <div class="px-6 py-4">
+                <form id="teacherForm">
+                    <input type="hidden" id="teacherId">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="teacherNameInput">
+                            姓名 <span class="text-red-500">*</span>
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                               id="teacherNameInput" type="text" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="teacherEmployeeIdInput">
+                            工号 <span class="text-red-500">*</span>
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                               id="teacherEmployeeIdInput" type="text" required>
+                        <p class="text-xs text-gray-500 mt-1">工号为唯一标识符，不可重复</p>
+                        <p id="employeeIdError" class="text-xs text-red-500 mt-1 hidden">该工号已存在，请使用其他工号</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="teacherUsernameInput">
+                            用户名 <span class="text-red-500">*</span>
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                               id="teacherUsernameInput" type="text" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="teacherPasswordInput">
+                            密码 <span class="text-red-500">*</span>
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                               id="teacherPasswordInput" type="password" required>
+                        <p class="text-xs text-gray-500 mt-1">新教师默认密码：123456，建议登录后修改</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="teacherRoleSelect">
+                            角色 <span class="text-red-500">*</span>
+                        </label>
+                        <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                id="teacherRoleSelect" required>
+                            <option value="teacher">教师</option>
+                            <option value="admin">管理员</option>
+                            <option value="approval_admin">审批管理员</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="teacherHireDateInput">
+                            入职日期 <span class="text-red-500">*</span>
+                        </label>
+                        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                               id="teacherHireDateInput" type="date" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="teacherStatusSelect">
+                            状态 <span class="text-red-500">*</span>
+                        </label>
+                        <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                                id="teacherStatusSelect" required>
+                            <option value="active">在职</option>
+                            <option value="leave">离职</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+                <button id="cancelTeacherBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200">
+                    取消
+                </button>
+                <button id="saveTeacherBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200">
+                    保存
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 审批操作弹窗 -->
+    <div id="approvalModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-transform duration-300 scale-95">
+            <div class="px-6 py-4 border-b">
+                <h3 id="approvalModalTitle" class="text-lg font-bold text-gray-700">审批申请</h3>
+            </div>
+            <div class="px-6 py-4">
+                <input type="hidden" id="approvalApplicationId">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="approvalResult">
+                        审批结果 <span class="text-red-500">*</span>
+                    </label>
+                    <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                            id="approvalResult" required>
+                        <option value="approved">批准</option>
+                        <option value="rejected">拒绝</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="approvalComment">
+                        审批意见
+                    </label>
+                    <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                              id="approvalComment" rows="4" placeholder="请输入审批意见（可选）"></textarea>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+                <button id="cancelApprovalBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200">
+                    取消
+                </button>
+                <button id="confirmApprovalBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200">
+                    确认
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 重置密码弹窗 -->
+    <div id="resetPasswordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-transform duration-300 scale-95">
+            <div class="px-6 py-4 border-b">
+                <h3 id="resetPasswordModalTitle" class="text-lg font-bold text-gray-700">重置密码</h3>
+            </div>
+            <div class="px-6 py-4">
+                <input type="hidden" id="resetPasswordUserId">
+                <p class="text-gray-600 mb-4">确定要将 <span id="resetPasswordUserName" class="font-medium"></span> 的密码重置为默认密码 <span class="font-mono bg-gray-100 px-1 rounded">123456</span> 吗？</p>
+                <p class="text-sm text-amber-600 bg-amber-50 p-2 rounded">
+                    <i class="fa fa-info-circle mr-1"></i> 重置后，用户需要使用默认密码登录并及时修改密码
+                </p>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+                <button id="cancelResetPasswordBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200">
+                    取消
+                </button>
+                <button id="confirmResetPasswordBtn" class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200">
+                    确认重置
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑代课次数弹窗 -->
+    <div id="editSubstituteCountModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md transform transition-transform duration-300 scale-95">
+            <div class="px-6 py-4 border-b">
+                <h3 id="editSubstituteCountModalTitle" class="text-lg font-bold text-gray-700">编辑代课次数</h3>
+            </div>
+            <div class="px-6 py-4">
+                <input type="hidden" id="editSubstituteCountUserId">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="substituteCount">
+                        代课次数 <span class="text-red-500">*</span>
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 transition duration-200" 
+                           id="substituteCount" type="number" min="0" required>
+                    <p class="text-sm text-amber-600 bg-amber-50 p-2 rounded mt-2">
+                        <i class="fa fa-info-circle mr-1"></i> 仅在记录错误时修改此数值，正常情况由系统自动计算
+                    </p>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+                <button id="cancelEditSubstituteCountBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded transition-colors duration-200">
+                    取消
+                </button>
+                <button id="confirmEditSubstituteCountBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors duration-200">
+                    保存修改
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟数据 - 教师列表 (增加审批管理员角色)
+        let teachers = [
+            { id: 1, name: '张三', employeeId: 'T001', username: 'zhangsan', password: '123456', role: 'teacher', hireDate: '2020-09-01', status: 'active', substituteCount: 15 },
+            { id: 2, name: '李四', employeeId: 'T002', username: 'lisi', password: '123456', role: 'teacher', hireDate: '2021-03-15', status: 'active', substituteCount: 8 },
+            { id: 3, name: '王五', employeeId: 'A001', username: 'wangwu', password: '123456', role: 'admin', hireDate: '2019-05-20', status: 'active', substituteCount: 5 },
+            { id: 4, name: '赵六', employeeId: 'T003', username: 'zhaoliu', password: '123456', role: 'teacher', hireDate: '2022-01-10', status: 'active', substituteCount: 3 },
+            { id: 5, name: '钱七', employeeId: 'AP001', username: 'qianqi', password: '123456', role: 'approval_admin', hireDate: '2020-03-10', status: 'active', substituteCount: 7 }
+        ];
+        
+        // 模拟数据 - 代课申请
+        let substituteApplications = [
+            { id: 1, applicantId: 1, applicantName: '张三', substituteTeacherId: 2, substituteTeacherName: '李四', 
+              applyDate: '2023-05-10', courseDate: '2023-05-15', courseTime: 'morning', 
+              courseName: '高等数学', courseLocation: '1号教学楼301室', reason: '参加学术会议', status: 'approved', comment: '' },
+            { id: 2, applicantId: 1, applicantName: '张三', substituteTeacherId: 4, substituteTeacherName: '赵六', 
+              applyDate: '2023-05-12', courseDate: '2023-05-20', courseTime: 'afternoon', 
+              courseName: '线性代数', courseLocation: '2号教学楼205室', reason: '个人事假', status: 'pending', comment: '' },
+            { id: 3, applicantId: 2, applicantName: '李四', substituteTeacherId: 1, substituteTeacherName: '张三', 
+              applyDate: '2023-05-08', courseDate: '2023-05-12', courseTime: 'evening', 
+              courseName: '大学物理', courseLocation: '实验楼102室', reason: '生病请假', status: 'approved', comment: '' }
+        ];
+        
+        // 当前登录用户
+        let currentUser = null;
+        // 当前页码和每页显示数量
+        let currentPage = 1;
+        const pageSize = 10;
+        // 当前筛选条件
+        let currentFilters = {
+            search: '',
+            status: 'all',
+            role: 'all',
+            approvalStatus: 'all',
+            approvalSearch: ''
+        };
+
+        // DOM 元素加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化登录表单提交事件
+            initLoginForm();
+            
+            // 初始化教师管理相关事件
+            initTeacherManagement();
+            
+            // 初始化移动菜单切换
+            initMobileMenu();
+            
+            // 初始化登出功能
+            initLogout();
+            
+            // 初始化导航菜单切换
+            initNavigation();
+            
+            // 初始化代课申请表单
+            initSubstituteForm();
+            
+            // 初始化审批管理功能（修复事件绑定问题）
+            initApprovalManagement();
+            
+            // 初始化导出功能
+            initExportFunctions();
+            
+            // 初始化个人设置和密码修改功能
+            initProfileSettings();
+        });
+
+        // 初始化登录表单
+        function initLoginForm() {
+            const loginForm = document.getElementById('loginForm');
+            const loginError = document.getElementById('loginError');
+            const loginErrorMessage = document.getElementById('loginErrorMessage');
+            
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('loginUsername').value.trim();
+                const password = document.getElementById('loginPassword').value.trim();
+                
+                // 查找匹配的用户
+                const user = teachers.find(t => t.username === username && t.password === password);
+                
+                if (user) {
+                    // 登录成功
+                    currentUser = user;
+                    loginError.classList.add('hidden');
+                    
+                    // 更新当前用户显示
+                    let roleText = '';
+                    switch(user.role) {
+                        case 'admin': roleText = '管理员'; break;
+                        case 'approval_admin': roleText = '审批管理员'; break;
+                        default: roleText = '教师';
+                    }
+                    document.getElementById('currentUser').textContent = `${roleText} - ${user.name}`;
+                    
+                    // 根据角色显示/隐藏元素
+                    updateRoleElementsVisibility(user.role);
+                    
+                    // 切换到系统页面
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('systemPage').classList.remove('hidden');
+                    
+                    // 初始化页面数据 - 管理员默认显示仪表盘，教师默认显示代课申请
+                    initSystemData(user.role === 'admin' || user.role === 'approval_admin');
+                    
+                    // 初始化个人设置
+                    initProfileFormData();
+                } else {
+                    // 登录失败
+                    loginErrorMessage.textContent = '用户名或密码错误，请重试';
+                    loginError.classList.remove('hidden');
+                    
+                    // 添加抖动动画效果
+                    const loginCard = loginForm.closest('.bg-white');
+                    loginCard.classList.add('animate-shake');
+                    setTimeout(() => {
+                        loginCard.classList.remove('animate-shake');
+                    }, 500);
+                }
+            });
+        }
+        
+        // 根据角色显示/隐藏元素
+        function updateRoleElementsVisibility(role) {
+            // 管理员元素（所有管理员可见）
+            const adminElements = document.querySelectorAll('.admin-only');
+            adminElements.forEach(el => {
+                el.style.display = (role === 'admin' || role === 'approval_admin') ? '' : 'none';
+            });
+            
+            // 审批管理元素（仅审批管理员和超级管理员可见）
+            const approvalElements = document.querySelectorAll('.approval-admin-only');
+            approvalElements.forEach(el => {
+                el.style.display = (role === 'admin' || role === 'approval_admin') ? '' : 'none';
+            });
+        }
+        
+        // 初始化系统数据
+        function initSystemData(isAdmin) {
+            // 管理员默认显示仪表盘，教师默认显示代课申请
+            if (isAdmin) {
+                showSection('dashboard');
+                // 高亮仪表盘导航
+                document.querySelector('.nav-link[href="#dashboard"]').classList.add('bg-blue-700');
+            } else {
+                showSection('substitute');
+                // 高亮代课申请导航
+                document.querySelector('.nav-link[href="#substitute"]').classList.add('bg-blue-700');
+            }
+            
+            // 加载教师列表（供管理员查看）
+            renderTeachers();
+            
+            // 初始化代课申请表单数据
+            initSubstituteFormData();
+            
+            // 加载我的申请记录
+            renderMyApplications();
+            
+            // 如果是管理员，加载审批列表和统计数据
+            if (isAdmin) {
+                renderApprovalList();
+                initAdminReports();
+            }
+            
+            // 初始化个人统计数据
+            initPersonalStats();
+        }
+        
+        // 初始化导航菜单切换
+        function initNavigation() {
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // 移除所有链接的活跃状态
+                    navLinks.forEach(l => l.classList.remove('bg-blue-700'));
+                    
+                    // 添加当前链接的活跃状态
+                    this.classList.add('bg-blue-700');
+                    
+                    // 显示对应的 section
+                    const target = this.getAttribute('href').substring(1);
+                    showSection(target);
+                });
+            });
+        }
+        
+        // 显示指定的 section
+        function showSection(sectionId) {
+            // 隐藏所有 section
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('substituteSection').classList.add('hidden');
+            document.getElementById('approvalSection').classList.add('hidden');
+            document.getElementById('teachersSection').classList.add('hidden');
+            document.getElementById('reportsSection').classList.add('hidden');
+            document.getElementById('profileSection').classList.add('hidden');
+            
+            // 显示目标 section
+            document.getElementById(`${sectionId}Section`).classList.remove('hidden');
+            
+            // 如果是审批管理页面，刷新列表
+            if (sectionId === 'approval') {
+                renderApprovalList();
+            }
+        }
+
+        // 初始化教师管理相关事件
+        function initTeacherManagement() {
+            // 添加教师按钮
+            document.getElementById('addTeacherBtn').addEventListener('click', function() {
+                openTeacherModal();
+            });
+            
+            // 取消按钮
+            document.getElementById('cancelTeacherBtn').addEventListener('click', function() {
+                closeTeacherModal();
+            });
+            
+            // 保存教师按钮
+            document.getElementById('saveTeacherBtn').addEventListener('click', function() {
+                saveTeacher();
+            });
+            
+            // 搜索输入
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                currentFilters.search = e.target.value.trim();
+                currentPage = 1; // 重置到第一页
+                renderTeachers();
+            });
+            
+            // 状态筛选
+            document.getElementById('statusFilter').addEventListener('change', function(e) {
+                currentFilters.status = e.target.value;
+                currentPage = 1; // 重置到第一页
+                renderTeachers();
+            });
+            
+            // 角色筛选
+            document.getElementById('roleFilter').addEventListener('change', function(e) {
+                currentFilters.role = e.target.value;
+                currentPage = 1; // 重置到第一页
+                renderTeachers();
+            });
+            
+            // 上一页按钮
+            document.getElementById('prevPage').addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTeachers();
+                }
+            });
+            
+            // 下一页按钮
+            document.getElementById('nextPage').addEventListener('click', function() {
+                const filteredTeachers = getFilteredTeachers();
+                const totalPages = Math.ceil(filteredTeachers.length / pageSize);
+                
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTeachers();
+                }
+            });
+            
+            // 工号输入验证
+            document.getElementById('teacherEmployeeIdInput').addEventListener('blur', validateEmployeeId);
+            
+            // 重置密码相关事件
+            document.getElementById('cancelResetPasswordBtn').addEventListener('click', function() {
+                closeResetPasswordModal();
+            });
+            
+            document.getElementById('confirmResetPasswordBtn').addEventListener('click', function() {
+                confirmResetPassword();
+            });
+            
+            // 编辑代课次数相关事件
+            document.getElementById('cancelEditSubstituteCountBtn').addEventListener('click', function() {
+                closeEditSubstituteCountModal();
+            });
+            
+            document.getElementById('confirmEditSubstituteCountBtn').addEventListener('click', function() {
+                confirmEditSubstituteCount();
+            });
+        }
+
+        // 初始化移动菜单
+        function initMobileMenu() {
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            mobileMenuBtn.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // 移动菜单链接点击事件
+            const mobileLinks = mobileMenu.querySelectorAll('a');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+        }
+
+        // 初始化登出功能
+        function initLogout() {
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                if (confirm('确定要退出登录吗？')) {
+                    currentUser = null;
+                    // 重置登录表单
+                    document.getElementById('loginForm').reset();
+                    // 切换到登录页面
+                    document.getElementById('systemPage').classList.add('hidden');
+                    document.getElementById('loginPage').classList.remove('hidden');
+                }
+            });
+        }
+        
+        // 初始化代课申请表单
+        function initSubstituteForm() {
+            const substituteForm = document.getElementById('substituteForm');
+            
+            substituteForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitSubstituteApplication();
+            });
+        }
+        
+        // 初始化代课申请表单数据
+        function initSubstituteFormData() {
+            // 设置申请人信息
+            document.getElementById('applicantName').value = currentUser.name;
+            document.getElementById('applicantId').value = currentUser.id;
+            
+            // 设置默认申请日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('applyDate').value = today;
+            
+            // 加载代课教师选项（排除当前登录用户）
+            const substituteTeacherSelect = document.getElementById('substituteTeacher');
+            substituteTeacherSelect.innerHTML = '<option value="">请选择代课教师</option>';
+            
+            teachers.forEach(teacher => {
+                // 只显示在职且不是当前用户的教师
+                if (teacher.id !== currentUser.id && teacher.status === 'active') {
+                    const option = document.createElement('option');
+                    option.value = teacher.id;
+                    option.textContent = `${teacher.name} (${teacher.employeeId})`;
+                    substituteTeacherSelect.appendChild(option);
+                }
+            });
+        }
+        
+        // 提交代课申请
+        function submitSubstituteApplication() {
+            const applicantId = parseInt(document.getElementById('applicantId').value);
+            const applicantName = document.getElementById('applicantName').value;
+            const applyDate = document.getElementById('applyDate').value;
+            const courseDate = document.getElementById('courseDate').value;
+            const courseTime = document.getElementById('courseTime').value;
+            const courseName = document.getElementById('courseName').value;
+            const courseLocation = document.getElementById('courseLocation').value;
+            const substituteTeacherId = parseInt(document.getElementById('substituteTeacher').value);
+            const reason = document.getElementById('reason').value;
+            
+            // 基本验证
+            if (!applyDate || !courseDate || !courseTime || !courseName || 
+                !courseLocation || !substituteTeacherId || !reason) {
+                alert('请填写所有必填字段');
+                return;
+            }
+            
+            // 查找代课教师姓名
+            const substituteTeacher = teachers.find(t => t.id === substituteTeacherId);
+            if (!substituteTeacher) {
+                alert('选择的代课教师不存在');
+                return;
+            }
+            
+            // 创建新申请
+            const newId = substituteApplications.length > 0 
+                ? Math.max(...substituteApplications.map(a => a.id)) + 1 
+                : 1;
+            
+            const newApplication = {
+                id: newId,
+                applicantId,
+                applicantName,
+                substituteTeacherId,
+                substituteTeacherName: substituteTeacher.name,
+                applyDate,
+                courseDate,
+                courseTime,
+                courseName,
+                courseLocation,
+                reason,
+                status: 'pending', // 默认为待审批状态
+                comment: ''
+            };
+            
+            // 添加到申请列表
+            substituteApplications.unshift(newApplication);
+            
+            // 重置表单
+            document.getElementById('substituteForm').reset();
+            document.getElementById('applyDate').value = new Date().toISOString().split('T')[0];
+            
+            // 重新渲染申请记录
+            renderMyApplications();
+            
+            // 如果当前用户是管理员，同时更新审批列表
+            if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'approval_admin')) {
+                renderApprovalList();
+            }
+            
+            // 显示成功通知
+            showNotification('代课申请已提交，等待审批');
+        }
+        
+        // 渲染我的申请记录
+        function renderMyApplications() {
+            // 筛选当前用户的申请
+            const myApplications = substituteApplications.filter(
+                app => app.applicantId === currentUser.id
+            );
+            
+            const tableBody = document.getElementById('myApplicationsTable');
+            const noApplications = document.getElementById('noApplications');
+            
+            // 清空表格
+            tableBody.innerHTML = '';
+            
+            if (myApplications.length === 0) {
+                noApplications.classList.remove('hidden');
+            } else {
+                noApplications.classList.add('hidden');
+                
+                // 添加申请记录行
+                myApplications.forEach(application => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 transition-colors duration-150';
+                    
+                    // 格式化日期显示
+                    const courseDate = new Date(application.courseDate).toLocaleDateString('zh-CN');
+                    const applyDate = new Date(application.applyDate).toLocaleDateString('zh-CN');
+                    
+                    // 状态标签样式
+                    let statusClass = '';
+                    let statusText = '';
+                    
+                    switch(application.status) {
+                        case 'pending':
+                            statusClass = 'bg-yellow-100 text-yellow-800';
+                            statusText = '待审批';
+                            break;
+                        case 'approved':
+                            statusClass = 'bg-green-100 text-green-800';
+                            statusText = '已批准';
+                            break;
+                        case 'rejected':
+                            statusClass = 'bg-red-100 text-red-800';
+                            statusText = '已拒绝';
+                            break;
+                        default:
+                            statusClass = 'bg-gray-100 text-gray-800';
+                            statusText = '未知';
+                    }
+                    
+                    // 课程时间文本
+                    let courseTimeText = '';
+                    switch(application.courseTime) {
+                        case 'morning':
+                            courseTimeText = '上午 (8:00-12:00)';
+                            break;
+                        case 'afternoon':
+                            courseTimeText = '下午 (14:00-18:00)';
+                            break;
+                        case 'evening':
+                            courseTimeText = '晚上 (19:00-21:00)';
+                            break;
+                    }
+                    
+                    row.innerHTML = `
+                        <td class="px-4 py-3 whitespace-nowrap">${application.id}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-medium text-gray-900">${application.courseName}</div>
+                            <div class="text-sm text-gray-500">${courseDate} ${courseTimeText}</div>
+                            <div class="text-sm text-gray-500">${application.courseLocation}</div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">${application.substituteTeacherName}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">${applyDate}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                                ${statusText}
+                            </span>
+                            ${application.comment ? `<div class="text-xs text-gray-500 mt-1">${application.comment}</div>` : ''}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                            ${application.status === 'pending' ? `
+                                <button class="text-red-600 hover:text-red-900 cancel-application" data-id="${application.id}">
+                                    <i class="fa fa-times mr-1"></i>取消
+                                </button>
+                            ` : ''}
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+                // 添加取消申请事件监听
+                document.querySelectorAll('.cancel-application').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const applicationId = parseInt(this.getAttribute('data-id'));
+                        cancelApplication(applicationId);
+                    });
+                });
+            }
+        }
+        
+        // 取消申请
+        function cancelApplication(applicationId) {
+            if (confirm('确定要取消该申请吗？')) {
+                substituteApplications = substituteApplications.filter(app => app.id !== applicationId);
+                renderMyApplications();
+                
+                // 如果当前用户是管理员，同时更新审批列表
+                if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'approval_admin')) {
+                    renderApprovalList();
+                }
+                
+                showNotification('申请已取消');
+            }
+        }
+        
+        // 初始化审批管理功能（修复事件绑定问题）
+        function initApprovalManagement() {
+            // 审批搜索输入
+            document.getElementById('approvalSearchInput').addEventListener('input', function(e) {
+                currentFilters.approvalSearch = e.target.value.trim();
+                renderApprovalList();
+            });
+            
+            // 审批状态筛选
+            document.getElementById('approvalStatusFilter').addEventListener('change', function(e) {
+                currentFilters.approvalStatus = e.target.value;
+                renderApprovalList();
+            });
+            
+            // 刷新审批列表
+            document.getElementById('refreshApprovalBtn').addEventListener('click', function() {
+                renderApprovalList();
+                showNotification('列表已刷新');
+            });
+            
+            // 取消审批按钮
+            document.getElementById('cancelApprovalBtn').addEventListener('click', function() {
+                closeApprovalModal();
+            });
+            
+            // 确认审批按钮（修复事件绑定）
+            document.getElementById('confirmApprovalBtn').addEventListener('click', function() {
+                processApproval();
+            });
+        }
+        
+        // 渲染审批列表
+        function renderApprovalList() {
+            // 根据筛选条件过滤申请
+            let filteredApplications = [...substituteApplications];
+            
+            // 状态筛选
+            if (currentFilters.approvalStatus !== 'all') {
+                filteredApplications = filteredApplications.filter(
+                    app => app.status === currentFilters.approvalStatus
+                );
+            }
+            
+            // 搜索筛选
+            if (currentFilters.approvalSearch) {
+                const searchTerm = currentFilters.approvalSearch.toLowerCase();
+                filteredApplications = filteredApplications.filter(app => 
+                    app.applicantName.toLowerCase().includes(searchTerm) ||
+                    app.substituteTeacherName.toLowerCase().includes(searchTerm) ||
+                    app.courseName.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // 按申请日期降序排序（最新的在前）
+            filteredApplications.sort((a, b) => 
+                new Date(b.applyDate) - new Date(a.applyDate)
+            );
+            
+            const tableBody = document.getElementById('approvalTable');
+            const noApprovals = document.getElementById('noApprovals');
+            
+            // 清空表格
+            tableBody.innerHTML = '';
+            
+            if (filteredApplications.length === 0) {
+                noApprovals.classList.remove('hidden');
+            } else {
+                noApprovals.classList.add('hidden');
+                
+                // 添加审批记录行
+                filteredApplications.forEach(application => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 transition-colors duration-150';
+                    
+                    // 格式化日期显示
+                    const courseDate = new Date(application.courseDate).toLocaleDateString('zh-CN');
+                    const applyDate = new Date(application.applyDate).toLocaleDateString('zh-CN');
+                    
+                    // 状态标签样式
+                    let statusClass = '';
+                    let statusText = '';
+                    
+                    switch(application.status) {
+                        case 'pending':
+                            statusClass = 'bg-yellow-100 text-yellow-800';
+                            statusText = '待审批';
+                            break;
+                        case 'approved':
+                            statusClass = 'bg-green-100 text-green-800';
+                            statusText = '已批准';
+                            break;
+                        case 'rejected':
+                            statusClass = 'bg-red-100 text-red-800';
+                            statusText = '已拒绝';
+                            break;
+                        default:
+                            statusClass = 'bg-gray-100 text-gray-800';
+                            statusText = '未知';
+                    }
+                    
+                    // 课程时间文本
+                    let courseTimeText = '';
+                    switch(application.courseTime) {
+                        case 'morning':
+                            courseTimeText = '上午';
+                            break;
+                        case 'afternoon':
+                            courseTimeText = '下午';
+                            break;
+                        case 'evening':
+                            courseTimeText = '晚上';
+                            break;
+                    }
+                    
+                    row.innerHTML = `
+                        <td class="px-4 py-3 whitespace-nowrap">${application.id}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">${application.applicantName}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-medium text-gray-900">${application.courseName}</div>
+                            <div class="text-sm text-gray-500">${courseDate} ${courseTimeText}</div>
+                            <div class="text-sm text-gray-500">${application.courseLocation}</div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">${application.substituteTeacherName}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">${applyDate}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                                ${statusText}
+                            </span>
+                            ${application.comment ? `<div class="text-xs text-gray-500 mt-1">${application.comment}</div>` : ''}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                            ${application.status === 'pending' ? `
+                                <button class="text-blue-600 hover:text-blue-900 process-approval" data-id="${application.id}">
+                                    <i class="fa fa-check mr-1"></i>处理
+                                </button>
+                            ` : `
+                                <button class="text-indigo-600 hover:text-indigo-900 view-application" data-id="${application.id}">
+                                    <i class="fa fa-eye mr-1"></i>查看
+                                </button>
+                            `}
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+                // 重新绑定处理审批事件（修复事件委托问题）
+                document.querySelectorAll('.process-approval').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const applicationId = parseInt(this.getAttribute('data-id'));
+                        openApprovalModal(applicationId);
+                    });
+                });
+            }
+        }
+        
+        // 打开审批弹窗
+        function openApprovalModal(applicationId) {
+            const modal = document.getElementById('approvalModal');
+            const applicationIdInput = document.getElementById('approvalApplicationId');
+            
+            // 设置申请ID
+            applicationIdInput.value = applicationId;
+            
+            // 重置表单
+            document.getElementById('approvalResult').value = 'approved';
+            document.getElementById('approvalComment').value = '';
+            
+            // 显示弹窗并添加动画
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.scale-95').classList.remove('scale-95');
+                modal.querySelector('.scale-95').classList.add('scale-100');
+            }, 10);
+            
+            // 阻止背景滚动
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // 关闭审批弹窗
+        function closeApprovalModal() {
+            const modal = document.getElementById('approvalModal');
+            
+            // 添加关闭动画
+            modal.classList.add('opacity-0');
+            modal.querySelector('.scale-100').classList.remove('scale-100');
+            modal.querySelector('.scale-100').classList.add('scale-95');
+            
+            // 完全隐藏弹窗
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // 恢复背景滚动
+                document.body.style.overflow = '';
+            }, 300);
+        }
+        
+        // 处理审批（修复功能）
+        function processApproval() {
+            const applicationId = parseInt(document.getElementById('approvalApplicationId').value);
+            const result = document.getElementById('approvalResult').value;
+            const comment = document.getElementById('approvalComment').value.trim();
+            
+            // 查找申请
+            const index = substituteApplications.findIndex(app => app.id === applicationId);
+            if (index === -1) {
+                alert('申请不存在');
+                return;
+            }
+            
+            // 更新申请状态
+            substituteApplications[index].status = result;
+            substituteApplications[index].comment = comment;
+            
+            // 如果批准，更新代课教师的代课次数
+            if (result === 'approved') {
+                const teacherIndex = teachers.findIndex(
+                    t => t.id === substituteApplications[index].substituteTeacherId
+                );
+                if (teacherIndex !== -1) {
+                    teachers[teacherIndex].substituteCount++;
+                }
+            }
+            
+            // 关闭弹窗
+            closeApprovalModal();
+            
+            // 更新审批列表
+            renderApprovalList();
+            
+            // 更新教师列表（如果当前在教师管理页面）
+            if (!document.getElementById('teachersSection').classList.contains('hidden')) {
+                renderTeachers();
+            }
+            
+            // 更新统计报表（如果当前在报表页面）
+            if (!document.getElementById('reportsSection').classList.contains('hidden')) {
+                initAdminReports();
+            }
+            
+            // 显示成功通知
+            showNotification(`申请已${result === 'approved' ? '批准' : '拒绝'}`);
+        }
+
+        // 获取筛选后的教师列表
+        function getFilteredTeachers() {
+            return teachers.filter(teacher => {
+                // 搜索筛选
+                const matchesSearch = currentFilters.search === '' || 
+                    teacher.name.includes(currentFilters.search) ||
+                    teacher.employeeId.includes(currentFilters.search) ||
+                    teacher.username.includes(currentFilters.search);
+                
+                // 状态筛选
+                const matchesStatus = currentFilters.status === 'all' || 
+                    teacher.status === currentFilters.status;
+                
+                // 角色筛选
+                const matchesRole = currentFilters.role === 'all' || 
+                    teacher.role === currentFilters.role;
+                
+                return matchesSearch && matchesStatus && matchesRole;
+            });
+        }
+
+        // 渲染教师列表
+        function renderTeachers() {
+            const filteredTeachers = getFilteredTeachers();
+            const totalCount = filteredTeachers.length;
+            const totalPages = Math.ceil(totalCount / pageSize);
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, totalCount);
+            const paginatedTeachers = filteredTeachers.slice(startIndex, endIndex);
+            
+            const tableBody = document.getElementById('teachersTable');
+            const noTeachers = document.getElementById('noTeachers');
+            const showingRange = document.getElementById('showingRange');
+            const totalCountEl = document.getElementById('totalCount');
+            const prevPageBtn = document.getElementById('prevPage');
+            const nextPageBtn = document.getElementById('nextPage');
+            
+            // 清空表格
+            tableBody.innerHTML = '';
+            
+            // 显示空状态或表格内容
+            if (totalCount === 0) {
+                noTeachers.classList.remove('hidden');
+                showingRange.textContent = '0-0';
+                prevPageBtn.disabled = true;
+                nextPageBtn.disabled = true;
+            } else {
+                noTeachers.classList.add('hidden');
+                showingRange.textContent = `${startIndex + 1}-${endIndex}`;
+                
+                // 添加教师行
+                paginatedTeachers.forEach(teacher => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 transition-colors duration-150';
+                    
+                    // 格式化日期显示
+                    const formattedDate = new Date(teacher.hireDate).toLocaleDateString('zh-CN');
+                    
+                    // 角色文本
+                    let roleText = '';
+                    switch(teacher.role) {
+                        case 'admin': roleText = '管理员'; break;
+                        case 'approval_admin': roleText = '审批管理员'; break;
+                        default: roleText = '教师';
+                    }
+                    
+                    row.innerHTML = `
+                        <td class="px-4 py-3 whitespace-nowrap">${teacher.id}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">${teacher.name}</td>
+                        <td class="px-4 py-3 whitespace-nowrap font-mono text-sm">${teacher.employeeId}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">${teacher.username}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                ${teacher.role === 'admin' ? 'bg-yellow-100 text-yellow-800' : 
+                                  teacher.role === 'approval_admin' ? 'bg-purple-100 text-purple-800' : 
+                                  'bg-green-100 text-green-800'}">
+                                ${roleText}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">${formattedDate}</td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                ${teacher.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${teacher.status === 'active' ? '在职' : '离职'}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span id="substituteCount-${teacher.id}">${teacher.substituteCount}</span>
+                            ${currentUser && currentUser.role === 'admin' ? `
+                                <button class="ml-2 text-indigo-600 hover:text-indigo-900 edit-substitute-count" data-id="${teacher.id}" data-count="${teacher.substituteCount}">
+                                    <i class="fa fa-pencil text-xs"></i>
+                                </button>
+                            ` : ''}
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                            <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-teacher" data-id="${teacher.id}">
+                                <i class="fa fa-pencil mr-1"></i>编辑
+                            </button>
+                            <button class="text-orange-600 hover:text-orange-900 mr-3 reset-password" data-id="${teacher.id}" data-name="${teacher.name}">
+                                <i class="fa fa-key mr-1"></i>重置密码
+                            </button>
+                            <button class="text-red-600 hover:text-red-900 delete-teacher" data-id="${teacher.id}">
+                                <i class="fa fa-trash mr-1"></i>删除
+                            </button>
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+                // 更新分页按钮状态
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages;
+            }
+            
+            // 更新总数显示
+            totalCountEl.textContent = totalCount;
+            
+            // 添加编辑和删除事件监听
+            document.querySelectorAll('.edit-teacher').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const teacherId = parseInt(this.getAttribute('data-id'));
+                    openTeacherModal(teacherId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-teacher').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const teacherId = parseInt(this.getAttribute('data-id'));
+                    deleteTeacher(teacherId);
+                });
+            });
+            
+            // 绑定重置密码事件
+            document.querySelectorAll('.reset-password').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const teacherId = parseInt(this.getAttribute('data-id'));
+                    const teacherName = this.getAttribute('data-name');
+                    openResetPasswordModal(teacherId, teacherName);
+                });
+            });
+            
+            // 绑定编辑代课次数事件
+            document.querySelectorAll('.edit-substitute-count').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const teacherId = parseInt(this.getAttribute('data-id'));
+                    const count = parseInt(this.getAttribute('data-count'));
+                    openEditSubstituteCountModal(teacherId, count);
+                });
+            });
+        }
+
+        // 打开教师添加/编辑弹窗
+        function openTeacherModal(teacherId = null) {
+            const modal = document.getElementById('teacherModal');
+            const modalTitle = document.getElementById('teacherModalTitle');
+            const teacherForm = document.getElementById('teacherForm');
+            const teacherIdInput = document.getElementById('teacherId');
+            const nameInput = document.getElementById('teacherNameInput');
+            const employeeIdInput = document.getElementById('teacherEmployeeIdInput');
+            const usernameInput = document.getElementById('teacherUsernameInput');
+            const passwordInput = document.getElementById('teacherPasswordInput');
+            const roleSelect = document.getElementById('teacherRoleSelect');
+            const hireDateInput = document.getElementById('teacherHireDateInput');
+            const statusSelect = document.getElementById('teacherStatusSelect');
+            const employeeIdError = document.getElementById('employeeIdError');
+            
+            // 重置表单和错误提示
+            teacherForm.reset();
+            teacherIdInput.value = '';
+            employeeIdError.classList.add('hidden');
+            
+            // 设置今天的日期为默认入职日期
+            const today = new Date().toISOString().split('T')[0];
+            hireDateInput.value = today;
+            
+            if (teacherId) {
+                // 编辑模式
+                modalTitle.textContent = '编辑教师';
+                const teacher = teachers.find(t => t.id === teacherId);
+                
+                if (teacher) {
+                    teacherIdInput.value = teacher.id;
+                    nameInput.value = teacher.name;
+                    employeeIdInput.value = teacher.employeeId;
+                    usernameInput.value = teacher.username;
+                    passwordInput.value = teacher.password;
+                    roleSelect.value = teacher.role;
+                    hireDateInput.value = teacher.hireDate;
+                    statusSelect.value = teacher.status;
+                    
+                    // 编辑模式下密码可以为空，表示不修改密码
+                    passwordInput.required = false;
+                    passwordInput.placeholder = '不修改密码请留空';
+                }
+            } else {
+                // 添加模式
+                modalTitle.textContent = '添加教师';
+                passwordInput.value = '123456';
+                passwordInput.required = true;
+                passwordInput.placeholder = '';
+            }
+            
+            // 显示弹窗并添加动画
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.scale-95').classList.remove('scale-95');
+                modal.querySelector('.scale-95').classList.add('scale-100');
+            }, 10);
+            
+            // 阻止背景滚动
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 关闭教师弹窗
+        function closeTeacherModal() {
+            const modal = document.getElementById('teacherModal');
+            
+            // 添加关闭动画
+            modal.classList.add('opacity-0');
+            modal.querySelector('.scale-100').classList.remove('scale-100');
+            modal.querySelector('.scale-100').classList.add('scale-95');
+            
+            // 完全隐藏弹窗
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // 恢复背景滚动
+                document.body.style.overflow = '';
+            }, 300);
+        }
+
+        // 验证工号唯一性
+        function validateEmployeeId() {
+            const employeeIdInput = document.getElementById('teacherEmployeeIdInput');
+            const employeeId = employeeIdInput.value.trim();
+            const teacherIdInput = document.getElementById('teacherId');
+            const currentTeacherId = teacherIdInput.value ? parseInt(teacherIdInput.value) : null;
+            const errorEl = document.getElementById('employeeIdError');
+            
+            // 检查工号是否已存在
+            const exists = teachers.some(teacher => 
+                teacher.employeeId === employeeId && teacher.id !== currentTeacherId
+            );
+            
+            if (exists) {
+                errorEl.classList.remove('hidden');
+                return false;
+            } else {
+                errorEl.classList.add('hidden');
+                return true;
+            }
+        }
+
+        // 保存教师信息
+        function saveTeacher() {
+            const teacherIdInput = document.getElementById('teacherId');
+            const nameInput = document.getElementById('teacherNameInput');
+            const employeeIdInput = document.getElementById('teacherEmployeeIdInput');
+            const usernameInput = document.getElementById('teacherUsernameInput');
+            const passwordInput = document.getElementById('teacherPasswordInput');
+            const roleSelect = document.getElementById('teacherRoleSelect');
+            const hireDateInput = document.getElementById('teacherHireDateInput');
+            const statusSelect = document.getElementById('teacherStatusSelect');
+            
+            // 获取表单值
+            const teacherId = teacherIdInput.value ? parseInt(teacherIdInput.value) : null;
+            const name = nameInput.value.trim();
+            const employeeId = employeeIdInput.value.trim();
+            const username = usernameInput.value.trim();
+            let password = passwordInput.value.trim();
+            const role = roleSelect.value;
+            const hireDate = hireDateInput.value;
+            const status = statusSelect.value;
+            
+            // 基本验证
+            if (!name || !employeeId || !username || (!teacherId && !password)) {
+                alert('请填写所有必填字段');
+                return;
+            }
+            
+            // 验证工号唯一性
+            if (!validateEmployeeId()) {
+                return;
+            }
+            
+            if (teacherId) {
+                // 更新现有教师
+                const index = teachers.findIndex(t => t.id === teacherId);
+                if (index !== -1) {
+                    // 如果密码为空，则不更新密码
+                    if (!password) {
+                        password = teachers[index].password;
+                    }
+                    
+                    teachers[index] = {
+                        ...teachers[index],
+                        name,
+                        employeeId,
+                        username,
+                        password,
+                        role,
+                        hireDate,
+                        status
+                    };
+                    
+                    showNotification('教师信息已更新');
+                }
+            } else {
+                // 添加新教师
+                const newId = teachers.length > 0 ? Math.max(...teachers.map(t => t.id)) + 1 : 1;
+                teachers.push({
+                    id: newId,
+                    name,
+                    employeeId,
+                    username,
+                    password,
+                    role,
+                    hireDate,
+                    status: status || 'active',
+                    substituteCount: 0
+                });
+                
+                showNotification('新教师已添加');
+            }
+            
+            // 关闭弹窗并重新渲染列表
+            closeTeacherModal();
+            renderTeachers();
+            
+            // 更新代课教师选择列表
+            initSubstituteFormData();
+        }
+
+        // 删除教师
+        function deleteTeacher(teacherId) {
+            const teacher = teachers.find(t => t.id === teacherId);
+            if (!teacher) return;
+            
+            // 检查是否有代课申请关联该教师
+            const hasApplications = substituteApplications.some(app => 
+                app.applicantId === teacherId || app.substituteTeacherId === teacherId
+            );
+            
+            if (hasApplications) {
+                if (!confirm(`教师"${teacher.name}"有相关的代课申请记录，确定要删除吗？`)) {
+                    return;
+                }
+            } else {
+                if (!confirm(`确定要删除教师"${teacher.name}"吗？`)) {
+                    return;
+                }
+            }
+            
+            // 从教师列表中删除
+            teachers = teachers.filter(t => t.id !== teacherId);
+            
+            // 删除相关的申请记录
+            substituteApplications = substituteApplications.filter(app => 
+                app.applicantId !== teacherId && app.substituteTeacherId !== teacherId
+            );
+            
+            // 重新渲染
+            renderTeachers();
+            renderMyApplications();
+            initSubstituteFormData();
+            
+            // 如果当前用户是管理员，同时更新审批列表
+            if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'approval_admin')) {
+                renderApprovalList();
+            }
+            
+            showNotification('教师已删除');
+        }
+        
+        // 初始化管理员统计报表
+        function initAdminReports() {
+            // 计算统计数据
+            const totalApplications = substituteApplications.length;
+            const approvedApplications = substituteApplications.filter(app => app.status === 'approved').length;
+            const pendingApplications = substituteApplications.filter(app => app.status === 'pending').length;
+            const rejectedApplications = substituteApplications.filter(app => app.status === 'rejected').length;
+            
+            // 更新统计卡片
+            document.getElementById('totalApplications').textContent = totalApplications;
+            document.getElementById('approvedApplications').textContent = approvedApplications;
+            document.getElementById('pendingApplications').textContent = pendingApplications;
+            
+            // 绘制状态分布图表
+            const statusCtx = document.getElementById('statusChart').getContext('2d');
+            new Chart(statusCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['已批准', '待审批', '已拒绝'],
+                    datasets: [{
+                        data: [approvedApplications, pendingApplications, rejectedApplications],
+                        backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // 准备教师代课次数排名数据
+            const teacherRanking = [...teachers]
+                .filter(t => t.status === 'active')
+                .sort((a, b) => b.substituteCount - a.substituteCount)
+                .slice(0, 5);
+            
+            // 绘制教师排名图表
+            const rankingCtx = document.getElementById('teacherRankingChart').getContext('2d');
+            new Chart(rankingCtx, {
+                type: 'bar',
+                data: {
+                    labels: teacherRanking.map(t => t.name),
+                    datasets: [{
+                        label: '代课次数',
+                        data: teacherRanking.map(t => t.substituteCount),
+                        backgroundColor: '#3B82F6',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化个人统计数据
+        function initPersonalStats() {
+            // 获取当前用户的申请记录
+            const myApplications = substituteApplications.filter(
+                app => app.applicantId === currentUser.id
+            );
+            
+            // 按状态统计
+            const approved = myApplications.filter(app => app.status === 'approved').length;
+            const pending = myApplications.filter(app => app.status === 'pending').length;
+            const rejected = myApplications.filter(app => app.status === 'rejected').length;
+            
+            // 绘制个人统计
+                       const ctx = document.getElementById('personalStatsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['已批准', '待审批', '已拒绝'],
+                    datasets: [{
+                        data: [approved, pending, rejected],
+                        backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // 渲染最近申请记录
+            const recentApplications = document.getElementById('recentApplications');
+            const noRecentApplications = document.getElementById('noRecentApplications');
+            
+            recentApplications.innerHTML = '';
+            
+            // 取最近3条申请
+            const recentApps = [...myApplications]
+                .sort((a, b) => new Date(b.applyDate) - new Date(a.applyDate))
+                .slice(0, 3);
+            
+            if (recentApps.length === 0) {
+                noRecentApplications.classList.remove('hidden');
+            } else {
+                noRecentApplications.classList.add('hidden');
+                
+                recentApps.forEach(app => {
+                    // 状态标签样式
+                    let statusClass = '';
+                    let statusText = '';
+                    
+                    switch(app.status) {
+                        case 'pending':
+                            statusClass = 'bg-yellow-100 text-yellow-800';
+                            statusText = '待审批';
+                            break;
+                        case 'approved':
+                            statusClass = 'bg-green-100 text-green-800';
+                            statusText = '已批准';
+                            break;
+                        case 'rejected':
+                            statusClass = 'bg-red-100 text-red-800';
+                            statusText = '已拒绝';
+                            break;
+                    }
+                    
+                    const appDate = new Date(app.applyDate).toLocaleDateString('zh-CN');
+                    const courseDate = new Date(app.courseDate).toLocaleDateString('zh-CN');
+                    
+                    const appCard = document.createElement('div');
+                    appCard.className = 'border-l-4 p-3 rounded bg-gray-50 hover:bg-gray-100 transition-colors duration-200';
+                    appCard.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-medium text-gray-900">${app.courseName}</h4>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    <span class="mr-3"><i class="fa fa-calendar-o mr-1"></i>${courseDate}</span>
+                                    <span><i class="fa fa-user-o mr-1"></i>${app.substituteTeacherName}</span>
+                                </p>
+                                <p class="text-xs text-gray-500 mt-1">申请日期: ${appDate}</p>
+                            </div>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                                ${statusText}
+                            </span>
+                        </div>
+                    `;
+                    
+                    recentApplications.appendChild(appCard);
+                });
+            }
+        }
+        
+        // 初始化导出功能
+        function initExportFunctions() {
+            // 导出代课节数统计
+            document.getElementById('exportSubstituteBtn').addEventListener('click', function() {
+                exportSubstituteStats();
+            });
+            
+            // 导出请假天数统计
+            document.getElementById('exportLeaveBtn').addEventListener('click', function() {
+                exportLeaveStats();
+            });
+            
+            // 下载模板
+            document.getElementById('downloadTemplateBtn').addEventListener('click', function() {
+                downloadTeacherTemplate();
+            });
+        }
+        
+        // 导出代课节数统计
+        function exportSubstituteStats() {
+            // 准备数据
+            const exportData = teachers
+                .filter(t => t.status === 'active')
+                .map(teacher => ({
+                    '教师ID': teacher.id,
+                    '姓名': teacher.name,
+                    '工号': teacher.employeeId,
+                    '角色': teacher.role === 'admin' ? '管理员' : 
+                           teacher.role === 'approval_admin' ? '审批管理员' : '教师',
+                    '代课次数': teacher.substituteCount,
+                    '入职日期': new Date(teacher.hireDate).toLocaleDateString('zh-CN'),
+                    '状态': '在职'
+                }));
+            
+            // 创建工作簿和工作表
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "代课次数统计");
+            
+            // 生成并下载文件
+            const today = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
+            XLSX.writeFile(wb, `教师代课次数统计_${today}.xlsx`);
+        }
+        
+        // 导出请假天数统计
+        function exportLeaveStats() {
+            // 按申请人分组统计
+            const leaveStats = {};
+            
+            substituteApplications.forEach(app => {
+                if (!leaveStats[app.applicantId]) {
+                    leaveStats[app.applicantId] = {
+                        applicantId: app.applicantId,
+                        applicantName: app.applicantName,
+                        total: 0,
+                        approved: 0,
+                        rejected: 0,
+                        pending: 0
+                    };
+                }
+                
+                leaveStats[app.applicantId].total++;
+                
+                switch(app.status) {
+                    case 'approved':
+                        leaveStats[app.applicantId].approved++;
+                        break;
+                    case 'rejected':
+                        leaveStats[app.applicantId].rejected++;
+                        break;
+                    case 'pending':
+                        leaveStats[app.applicantId].pending++;
+                        break;
+                }
+            });
+            
+            // 转换为数组并准备导出数据
+            const exportData = Object.values(leaveStats).map(stat => ({
+                '教师ID': stat.applicantId,
+                '姓名': stat.applicantName,
+                '总申请次数': stat.total,
+                '已批准次数': stat.approved,
+                '已拒绝次数': stat.rejected,
+                '待审批次数': stat.pending
+            }));
+            
+            // 创建工作簿和工作表
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "请假次数统计");
+            
+            // 生成并下载文件
+            const today = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
+            XLSX.writeFile(wb, `教师请假次数统计_${today}.xlsx`);
+        }
+        
+        // 下载教师导入模板
+        function downloadTeacherTemplate() {
+            // 创建模板数据
+            const templateData = [
+                { '姓名': '张三', '工号': 'T001', '用户名': 'zhangsan', '角色': '教师', '入职日期': '2023-01-01', '状态': '在职' },
+                { '姓名': '李四', '工号': 'T002', '用户名': 'lisi', '角色': '教师', '入职日期': '2023-02-15', '状态': '在职' }
+            ];
+            
+            // 创建工作簿和工作表
+            const ws = XLSX.utils.json_to_sheet(templateData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "教师信息");
+            
+            // 添加说明
+            const noteWs = XLSX.utils.json_to_sheet([
+                { '说明': '1. 角色只能是"教师"、"管理员"或"审批管理员"' },
+                { '说明': '2. 状态只能是"在职"或"离职"' },
+                { '说明': '3. 入职日期格式为YYYY-MM-DD' },
+                { '说明': '4. 工号和用户名必须唯一' }
+            ]);
+            XLSX.utils.book_append_sheet(wb, noteWs, "填写说明");
+            
+            // 生成并下载文件
+            XLSX.writeFile(wb, '教师信息导入模板.xlsx');
+        }
+        
+        // 初始化个人设置表单数据
+        function initProfileFormData() {
+            if (!currentUser) return;
+            
+            document.getElementById('profileUserId').value = currentUser.id;
+            document.getElementById('profileName').value = currentUser.name;
+            document.getElementById('profileEmployeeId').value = currentUser.employeeId;
+            document.getElementById('profileUsername').value = currentUser.username;
+            
+            // 设置角色文本
+            let roleText = '';
+            switch(currentUser.role) {
+                case 'admin': roleText = '管理员'; break;
+                case 'approval_admin': roleText = '审批管理员'; break;
+                default: roleText = '教师';
+            }
+            document.getElementById('profileRole').value = roleText;
+            
+            // 设置入职日期
+            document.getElementById('profileHireDate').value = new Date(currentUser.hireDate).toLocaleDateString('zh-CN');
+            
+            // 设置密码修改表单的用户ID
+            document.getElementById('passwordUserId').value = currentUser.id;
+        }
+        
+        // 初始化个人设置和密码修改功能
+        function initProfileSettings() {
+            // 个人信息表单提交
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                updateProfileInfo();
+            });
+            
+            // 密码修改表单提交
+            document.getElementById('changePasswordForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                changePassword();
+            });
+            
+            // 密码验证
+            document.getElementById('confirmPassword').addEventListener('input', validatePasswordMatch);
+        }
+        
+        // 更新个人信息
+        function updateProfileInfo() {
+            const userId = parseInt(document.getElementById('profileUserId').value);
+            const name = document.getElementById('profileName').value.trim();
+            const username = document.getElementById('profileUsername').value.trim();
+            
+            if (!name || !username) {
+                alert('请填写所有必填字段');
+                return;
+            }
+            
+            // 查找并更新用户信息
+            const index = teachers.findIndex(t => t.id === userId);
+            if (index !== -1) {
+                teachers[index].name = name;
+                teachers[index].username = username;
+                
+                // 更新当前用户信息
+                currentUser.name = name;
+                currentUser.username = username;
+                
+                // 更新显示的用户名
+                let roleText = '';
+                switch(currentUser.role) {
+                    case 'admin': roleText = '管理员'; break;
+                    case 'approval_admin': roleText = '审批管理员'; break;
+                    default: roleText = '教师';
+                }
+                document.getElementById('currentUser').textContent = `${roleText} - ${currentUser.name}`;
+                
+                // 更新申请表单中的申请人姓名
+                document.getElementById('applicantName').value = currentUser.name;
+                
+                // 更新相关列表
+                renderTeachers();
+                renderMyApplications();
+                if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'approval_admin')) {
+                    renderApprovalList();
+                }
+                
+                showNotification('个人信息已更新');
+            }
+        }
+        
+        // 验证密码是否匹配
+        function validatePasswordMatch() {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorEl = document.getElementById('passwordMismatchError');
+            
+            if (newPassword && confirmPassword && newPassword !== confirmPassword) {
+                errorEl.classList.remove('hidden');
+                return false;
+            } else {
+                errorEl.classList.add('hidden');
+                return true;
+            }
+        }
+        
+        // 修改密码
+        function changePassword() {
+            const userId = parseInt(document.getElementById('passwordUserId').value);
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // 基本验证
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('请填写所有字段');
+                return;
+            }
+            
+            // 密码长度验证
+            if (newPassword.length < 6) {
+                alert('密码长度至少为6位');
+                return;
+            }
+            
+            // 密码匹配验证
+            if (!validatePasswordMatch()) {
+                return;
+            }
+            
+            // 查找用户
+            const index = teachers.findIndex(t => t.id === userId);
+            if (index === -1) {
+                alert('用户不存在');
+                return;
+            }
+            
+            // 验证当前密码
+            const currentPasswordError = document.getElementById('currentPasswordError');
+            if (teachers[index].password !== currentPassword) {
+                currentPasswordError.classList.remove('hidden');
+                return;
+            }
+            
+            currentPasswordError.classList.add('hidden');
+            
+            // 更新密码
+            teachers[index].password = newPassword;
+            currentUser.password = newPassword;
+            
+            // 重置表单
+            document.getElementById('changePasswordForm').reset();
+            
+            showNotification('密码已更新，请使用新密码重新登录');
+            
+            // 延迟登出，让用户看到通知
+            setTimeout(() => {
+                // 模拟登出
+                document.getElementById('logoutBtn').click();
+            }, 2000);
+        }
+        
+        // 打开重置密码弹窗
+        function openResetPasswordModal(teacherId, teacherName) {
+            const modal = document.getElementById('resetPasswordModal');
+            const userIdInput = document.getElementById('resetPasswordUserId');
+            const userNameSpan = document.getElementById('resetPasswordUserName');
+            
+            // 设置用户ID和姓名
+            userIdInput.value = teacherId;
+            userNameSpan.textContent = teacherName;
+            
+            // 显示弹窗并添加动画
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.scale-95').classList.remove('scale-95');
+                modal.querySelector('.scale-95').classList.add('scale-100');
+            }, 10);
+            
+            // 阻止背景滚动
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // 关闭重置密码弹窗
+        function closeResetPasswordModal() {
+            const modal = document.getElementById('resetPasswordModal');
+            
+            // 添加关闭动画
+            modal.classList.add('opacity-0');
+            modal.querySelector('.scale-100').classList.remove('scale-100');
+            modal.querySelector('.scale-100').classList.add('scale-95');
+            
+            // 完全隐藏弹窗
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // 恢复背景滚动
+                document.body.style.overflow = '';
+            }, 300);
+        }
+        
+        // 确认重置密码
+        function confirmResetPassword() {
+            const teacherId = parseInt(document.getElementById('resetPasswordUserId').value);
+            
+            // 查找用户
+            const index = teachers.findIndex(t => t.id === teacherId);
+            if (index === -1) {
+                alert('用户不存在');
+                return;
+            }
+            
+            // 重置密码为默认值
+            teachers[index].password = '123456';
+            
+            // 关闭弹窗并刷新列表
+            closeResetPasswordModal();
+            renderTeachers();
+            
+            showNotification('密码已重置为默认值123456');
+        }
+        
+        // 打开编辑代课次数弹窗
+        function openEditSubstituteCountModal(teacherId, count) {
+            const modal = document.getElementById('editSubstituteCountModal');
+            const userIdInput = document.getElementById('editSubstituteCountUserId');
+            const countInput = document.getElementById('substituteCount');
+            
+            // 设置用户ID和当前次数
+            userIdInput.value = teacherId;
+            countInput.value = count;
+            
+            // 显示弹窗并添加动画
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.scale-95').classList.remove('scale-95');
+                modal.querySelector('.scale-95').classList.add('scale-100');
+            }, 10);
+            
+            // 阻止背景滚动
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // 关闭编辑代课次数弹窗
+        function closeEditSubstituteCountModal() {
+            const modal = document.getElementById('editSubstituteCountModal');
+            
+            // 添加关闭动画
+            modal.classList.add('opacity-0');
+            modal.querySelector('.scale-100').classList.remove('scale-100');
+            modal.querySelector('.scale-100').classList.add('scale-95');
+            
+            // 完全隐藏弹窗
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // 恢复背景滚动
+                document.body.style.overflow = '';
+            }, 300);
+        }
+        
+        // 确认编辑代课次数
+        function confirmEditSubstituteCount() {
+            const teacherId = parseInt(document.getElementById('editSubstituteCountUserId').value);
+            const count = parseInt(document.getElementById('substituteCount').value);
+            
+            if (isNaN(count) || count < 0) {
+                alert('请输入有效的次数');
+                return;
+            }
+            
+            // 查找用户
+            const index = teachers.findIndex(t => t.id === teacherId);
+            if (index === -1) {
+                alert('用户不存在');
+                return;
+            }
+            
+            // 更新代课次数
+            teachers[index].substituteCount = count;
+            
+            // 关闭弹窗并刷新列表
+            closeEditSubstituteCountModal();
+            renderTeachers();
+            
+            // 更新统计报表（如果当前在报表页面）
+            if (!document.getElementById('reportsSection').classList.contains('hidden')) {
+                initAdminReports();
+            }
+            
+            showNotification('代课次数已更新');
+        }
+        
+        // 显示通知
+        function showNotification(message) {
+            // 检查是否已存在通知元素
+            let notification = document.getElementById('notification');
+            
+            if (!notification) {
+                // 创建通知元素
+                notification = document.createElement('div');
+                notification.id = 'notification';
+                notification.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-3 rounded shadow-lg transform translate-y-10 opacity-0 transition-all duration-300 z-50 flex items-center';
+                notification.innerHTML = `
+                    <i class="fa fa-check-circle text-green-400 mr-2"></i>
+                    <span id="notificationMessage"></span>
+                `;
+                document.body.appendChild(notification);
+            }
+            
+            // 设置通知内容
+            document.getElementById('notificationMessage').textContent = message;
+            
+            // 显示通知
+            setTimeout(() => {
+                notification.classList.remove('translate-y-10', 'opacity-0');
+            }, 10);
+            
+            // 3秒后隐藏通知
+            setTimeout(() => {
+                notification.classList.add('translate-y-10', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+    
