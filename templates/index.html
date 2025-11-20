@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教师工具箱 - 一站式教师日常管理工具合集</title>
+
+    <!-- CSS资源 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/element-plus.index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='src/css/app.css') }}">
+    <style>
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            background-color: #f8f8f8;
+            border-top: 1px solid #eee;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 40px;
+        }
+
+        .copyright {
+            margin: 0;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- 移动端菜单按钮 -->
+        <button class="mobile-menu-btn" @click="toggleSidebar">☰</button>
+
+        <div class="app-container">
+            <!-- 侧边栏 -->
+            <div class="sidebar" :class="{ open: sidebarOpen }">
+                <div class="sidebar-header">
+                    <div class="sidebar-title">教师工具箱</div>
+                    <div class="sidebar-subtitle">一站式教师日常管理工具合集</div>
+                </div>
+                <div class="sidebar-menu">
+                    {% raw %}
+                    <a v-for="category in categories" :key="category.id" :href="'/tools/categories/' + category.id + '/'"
+                        class="menu-item" :class="{ active: selectedCategory === category.id }"
+                        @click="selectCategory(category)">
+                        <div class="menu-icon">{{ getIcon(category.icon) }}</div>
+                        <div>{{ category.name }}</div>
+                    </a>
+                    {% endraw %}
+                </div>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="main-content">
+                <!-- 快速开始 -->
+                <div class="quick-start">
+                    <h2>快速开始</h2>
+                    <div class="quick-start-buttons">
+                        <a href="#" class="quick-start-btn">
+                            📁 上传班级名单
+                        </a>
+                        <a href="#" class="quick-start-btn">
+                            ➕ 创建新班级
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="action-buttons">
+                    <a href="/add.html" class="action-btn">➕ 添加项目</a>
+                    <a href="/del.html" class="action-btn">🗑️ 删除项目</a>
+                </div>
+
+                <!-- 加载状态 -->
+                <div v-if="loading" class="loading">
+                    <p>正在加载工具数据...</p>
+                </div>
+
+                <div v-else-if="error" class="error">
+                    <p>加载失败：{{ error }}</p>
+                </div>
+
+                <!-- 分类和工具显示 -->
+                <div v-else>
+                    {% raw %}
+                    <div v-for="category in categories" :key="category.id" class="categories-section">
+                        <!-- 分类标题（可点击展开/折叠） -->
+                        <div class="section-header" @click="toggleCategory(category)">
+                            <div class="section-title-container">
+                                <div class="section-icon">{{ getIcon(category.icon) }}</div>
+                                <div class="section-title">{{ category.name }}</div>
+                            </div>
+                            <button class="expand-btn" :class="{ expanded: category.expanded }">
+                                ▼
+                            </button>
+                        </div>
+
+                        <!-- 工具网格（默认展开） -->
+                        <div v-show="category.expanded" class="tools-grid">
+                            <div v-for="tool in category.tools" :key="tool.id" class="tool-card">
+                                <div class="tool-header">
+                                    <div class="tool-icon">{{ getIcon(tool.icon) }}</div>
+                                    <div class="tool-title">{{ tool.name }}</div>
+                                </div>
+                                <div class="tool-description">
+                                    {{ tool.description }}
+                                </div>
+                                <a :href="category.path + '/tools/' + tool.id + '/index.html'" class="tool-action">
+                                    使用工具
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endraw %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <div class="copyright">
+            &copy; 开源教师工具箱，欢迎社区提供。
+        </div>
+    </footer>
+
+    <!-- JS资源 -->
+    <script src="{{ url_for('static', filename='vendor/js/vue.global.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/js/pinia.iife.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/js/vue-router.global.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/js/element-plus.index.full.js') }}"></script>
+    <script src="{{ url_for('static', filename='src/js/utils.js') }}"></script>
+    <script>
+        // 初始化数据
+        const app = Vue.createApp({
+            data() {
+                return {
+                    categories: {{ categories | tojson }},
+                    selectedCategory: null,
+                    sidebarOpen: false,
+                    loading: false,
+                    error: null
+                };
+            },
+            mounted() {
+                // 为每个分类设置初始展开状态
+                this.categories.forEach(category => {
+                    category.expanded = true;
+                });
+            },
+            methods: {
+                toggleCategory(category) {
+                    category.expanded = !category.expanded;
+                },
+                selectCategory(category) {
+                    this.selectedCategory = category.id;
+                    this.sidebarOpen = false;
+                },
+                toggleSidebar() {
+                    this.sidebarOpen = !this.sidebarOpen;
+                },
+                getIcon(iconName) {
+                    const icons = {
+                        'DocumentAdd': '📄',
+                        'ChatLineSquare': '💬',
+                        'EditPen': '✏️',
+                        'Calendar': '📅',
+                        'Medal': '🏆',
+                        'Notification': '🔔'
+                    };
+                    return icons[iconName] || '🔧';
+                }
+            }
+        });
+        
+        app.mount('#app');
+    </script>
+</body>
+
+</html>

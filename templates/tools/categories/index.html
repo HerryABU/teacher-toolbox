@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ category.name if category else '工具分类' }} - 教师工具箱</title>
+    
+    <!-- 引入Vue.js和相关库 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/pinia@2/dist/pinia.iife.js"></script>
+    <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
+    <script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            color: #303133;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .breadcrumb a {
+            color: #409eff;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        .breadcrumb .separator {
+            margin: 0 10px;
+            color: #909399;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .tool-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .tool-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .tool-icon {
+            width: 50px;
+            height: 50px;
+            background-color: #ecf5ff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: #409eff;
+            font-size: 24px;
+        }
+        
+        .tool-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #303133;
+        }
+        
+        .tool-description {
+            color: #606266;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .tool-action {
+            background-color: #409eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .tool-action:hover {
+            background-color: #66b1ff;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #909399;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #f56c6c;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #909399;
+        }
+        
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            .breadcrumb {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+    <script src="{{ url_for('static', filename='src/js/utils.js') }}"></script>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <!-- 面包屑导航 -->
+            <div class="breadcrumb">
+                <a href="/">主页</a>
+                <span class="separator">></span>
+                <a href="/tools/">工具分类</a>
+                <span class="separator">></span>
+                <span>{{ category.name if category else '工具分类' }}</span>
+            </div>
+            
+            <!-- 页面头部 -->
+            <div class="header">
+                <h1>{{ category.name if category else '工具分类' }}</h1>
+                <p>专业的教学管理工具，帮助您提高工作效率</p>
+            </div>
+            
+            <!-- 工具列表 -->
+            <div class="tools-grid">
+                {% raw %}
+                <div v-for="tool in tools" 
+                     :key="tool.id"
+                     class="tool-card">
+                    <div class="tool-header">
+                        <div class="tool-icon">{{ getIcon(tool.icon) }}</div>
+                        <div class="tool-title">{{ tool.name }}</div>
+                    </div>
+                    <div class="tool-description">
+                        {{ tool.description }}
+                    </div>
+                    <a :href="'/tools/categories/{{ category.id if category else 'unknown' }}/tools/' + tool.id + '/'" class="tool-action">
+                        使用工具
+                    </a>
+                </div>
+                {% endraw %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    tools: {{ tools | tojson }}
+                };
+            },
+            methods: {
+                getIcon(iconName) {
+                    const icons = {
+                        'Aim': '🎯',
+                        'Grid': '📊',
+                        'Tickets': '🎫',
+                        'UserFilled': '👤',
+                        'Dice': '🎲',
+                        'Check': '✅',
+                        'Trophy': '🏆',
+                        'DataAnalysis': '📈',
+                        'TrendCharts': '📉',
+                        'Collection': '📚',
+                        'Bell': '🔔',
+                        'Message': '💬',
+                        'FirstAid': '🏥',
+                        'Box': '📦',
+                        'Calendar': '📅',
+                        'Medal': '🏆',
+                        'List': '📋',
+                        'DocumentAdd': '📄',
+                        'ChatLineSquare': '💬',
+                        'EditPen': '✏️',
+                        'Notification': '🔔'
+                    };
+                    return icons[iconName] || '🔧';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
