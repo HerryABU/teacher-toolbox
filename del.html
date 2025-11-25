@@ -579,9 +579,19 @@
                 
                 async deleteCategory() {
                     try {
-                        // 这里应该是实际删除分类的逻辑
-                        // 由于是静态页面，这里只是模拟删除
-                        console.log('删除分类:', this.categoryToDelete);
+                        // 调用API删除分类
+                        const response = await fetch(`/api/categories/${this.categoryToDelete.id}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (!response.ok) {
+                            this.errorMessage = result.error || '删除分类失败';
+                            this.successMessage = '';
+                            this.hideDeleteCategoryDialog();
+                            return;
+                        }
                         
                         // 从数组中移除
                         this.categories = this.categories.filter(c => c.id !== this.categoryToDelete.id);
@@ -589,26 +599,14 @@
                         // 从工具列表中移除该分类的工具
                         this.allTools = this.allTools.filter(t => t.categoryId !== this.categoryToDelete.id);
                         
-                        // 模拟更新JSON文件
-                        console.log('模拟更新tools/config.json');
-                        console.log(`模拟删除目录: tools/categories/${this.categoryToDelete.id}`);
+                        this.successMessage = `分类 "${this.categoryToDelete.name}" 已删除！`;
+                        this.errorMessage = '';
+                        this.hideDeleteCategoryDialog();
                         
-                        // 使用本地存储模拟保存
-                        const success = window.ToolboxUtils.localStorageMock.deleteConfig(`category_${this.categoryToDelete.id}`);
-                        if (success) {
-                            this.successMessage = `分类 "${this.categoryToDelete.name}" 已删除！`;
-                            this.errorMessage = '';
-                            this.hideDeleteCategoryDialog();
-                            
-                            // 3秒后清空成功消息
-                            setTimeout(() => {
-                                this.successMessage = '';
-                            }, 3000);
-                        } else {
-                            this.errorMessage = '删除失败，请重试';
+                        // 3秒后清空成功消息
+                        setTimeout(() => {
                             this.successMessage = '';
-                            this.hideDeleteCategoryDialog();
-                        }
+                        }, 3000);
                         
                     } catch (error) {
                         console.error('删除失败:', error);
@@ -630,33 +628,31 @@
                 
                 async deleteTool() {
                     try {
-                        // 这里应该是实际删除工具的逻辑
-                        // 由于是静态页面，这里只是模拟删除
-                        console.log('删除工具:', this.toolToDelete);
+                        // 调用API删除工具
+                        const response = await fetch(`/api/tools/${this.toolToDelete.categoryId}/${this.toolToDelete.id}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (!response.ok) {
+                            this.errorMessage = result.error || '删除工具失败';
+                            this.successMessage = '';
+                            this.hideDeleteToolDialog();
+                            return;
+                        }
                         
                         // 从数组中移除
                         this.allTools = this.allTools.filter(t => t.id !== this.toolToDelete.id);
                         
-                        // 模拟更新对应分类的JSON文件
-                        console.log(`模拟更新tools/categories/${this.toolToDelete.categoryId}/config.json`);
-                        console.log(`模拟删除目录: tools/categories/${this.toolToDelete.categoryId}/tools/${this.toolToDelete.id}`);
+                        this.successMessage = `工具 "${this.toolToDelete.name}" 已删除！`;
+                        this.errorMessage = '';
+                        this.hideDeleteToolDialog();
                         
-                        // 使用本地存储模拟保存
-                        const success = window.ToolboxUtils.localStorageMock.deleteConfig(`tool_${this.toolToDelete.id}`);
-                        if (success) {
-                            this.successMessage = `工具 "${this.toolToDelete.name}" 已删除！`;
-                            this.errorMessage = '';
-                            this.hideDeleteToolDialog();
-                            
-                            // 3秒后清空成功消息
-                            setTimeout(() => {
-                                this.successMessage = '';
-                            }, 3000);
-                        } else {
-                            this.errorMessage = '删除失败，请重试';
+                        // 3秒后清空成功消息
+                        setTimeout(() => {
                             this.successMessage = '';
-                            this.hideDeleteToolDialog();
-                        }
+                        }, 3000);
                         
                     } catch (error) {
                         console.error('删除失败:', error);

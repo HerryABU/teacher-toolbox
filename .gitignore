@@ -1,34 +1,40 @@
 ```
-# Python
+# Dependencies
+.venv/
+venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Dependencies
-venv/
-.venv/
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
 .env
 .env.local
 *.env.*
 
-# Logs
-*.log
-
-# Editor/IDE
+# Editors
 .vscode/
 .idea/
-*.swp
-*.swo
-*.tmp
 
-# Coverage
+# Excel files (if they are temporary/generated)
+*.xlsx
+
+# Coverage reports
 .coverage
-coverage/
 htmlcov/
+coverage/
 
-# Distribution / Build
-dist/
+# Python specific
+*.py[cod]
+*$py.class
+*.so
+.Python
 build/
+dist/
 *.egg-info/
 ```
