@@ -663,85 +663,71 @@
                             }
                         }
                         
-                        // 准备要保存的数据
-                        const saveData = {
-                            category: null,
-                            tools: []
-                        };
-                        
-                        // 处理分类数据
+                        // 如果是新建分类，先创建分类
+                        let categoryId = this.form.selectedCategory;
                         if (this.form.newCategory) {
-                            saveData.category = {
-                                id: this.form.categoryId,
-                                name: this.form.categoryName,
-                                icon: this.form.categoryIcon,
-                                path: `/tools/categories/${this.form.categoryId}`
+                            const categoryData = {
+                                operation: 'category',
+                                category_id: this.form.categoryId,
+                                category_name: this.form.categoryName,
+                                category_icon: this.form.categoryIcon
                             };
-                        } else {
-                            // 使用现有分类
-                            const selectedCategory = this.existingCategories.find(c => c.id === this.form.selectedCategory);
-                            if (selectedCategory) {
-                                saveData.category = {
-                                    id: selectedCategory.id,
-                                    name: selectedCategory.name,
-                                    icon: selectedCategory.icon,
-                                    path: selectedCategory.path
-                                };
+                            
+                            const categoryResponse = await fetch('/api/tools', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(categoryData)
+                            });
+                            
+                            const categoryResult = await categoryResponse.json();
+                            
+                            if (!categoryResponse.ok) {
+                                this.errorMessage = categoryResult.error || '分类创建失败';
+                                return;
                             }
+                            
+                            categoryId = this.form.categoryId;
                         }
                         
-                        // 处理工具数据
+                        // 添加所有新工具
                         for (let tool of this.form.tools) {
                             if (tool.newTool) {
-                                saveData.tools.push({
-                                    id: tool.id,
-                                    name: tool.name,
-                                    description: tool.description,
-                                    icon: tool.icon,
-                                    path: `./tools/${tool.id}/index.html`
+                                const toolData = {
+                                    operation: 'tool',
+                                    category_id: categoryId,
+                                    tool_id: tool.id,
+                                    tool_name: tool.name,
+                                    tool_description: tool.description,
+                                    tool_icon: tool.icon
+                                };
+                                
+                                const toolResponse = await fetch('/api/tools', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify(toolData)
                                 });
-                            } else {
-                                // 使用现有工具
-                                const selectedTool = this.existingTools.find(t => t.id === tool.selectedTool);
-                                if (selectedTool) {
-                                    saveData.tools.push({
-                                        id: selectedTool.id,
-                                        name: selectedTool.name,
-                                        description: selectedTool.description,
-                                        icon: selectedTool.icon,
-                                        path: selectedTool.path
-                                    });
+                                
+                                const toolResult = await toolResponse.json();
+                                
+                                if (!toolResponse.ok) {
+                                    this.errorMessage = toolResult.error || '工具创建失败';
+                                    return;
                                 }
                             }
                         }
                         
-                        // 模拟保存到JSON文件
-                        console.log('准备更新JSON文件...');
-                        console.log('更新tools/config.json');
-                        if (saveData.category) {
-                            console.log(`创建新分类目录: tools/categories/${saveData.category.id}`);
-                            console.log(`创建新分类配置文件: tools/categories/${saveData.category.id}/config.json`);
-                        }
-                        saveData.tools.forEach(tool => {
-                            console.log(`创建新工具目录: tools/categories/${saveData.category.id}/tools/${tool.id}`);
-                            console.log(`创建新工具页面: tools/categories/${saveData.category.id}/tools/${tool.id}/index.html`);
-                        });
-                        console.log('JSON文件更新完成！');
+                        this.successMessage = '项目保存成功！';
+                        this.errorMessage = '';
                         
-                        // 使用本地存储模拟保存
-                        const success = window.ToolboxUtils.localStorageMock.saveConfig('newProject', saveData);
-                        if (success) {
-                            this.successMessage = '项目保存成功！';
-                            this.errorMessage = '';
-                            
-                            // 3秒后清空成功消息
-                            setTimeout(() => {
-                                this.successMessage = '';
-                            }, 3000);
-                        } else {
-                            this.errorMessage = '保存失败，请重试';
+                        // 3秒后清空成功消息并重置表单
+                        setTimeout(() => {
                             this.successMessage = '';
-                        }
+                            this.resetForm();
+                        }, 3000);
                         
                     } catch (error) {
                         console.error('保存失败:', error);
